@@ -2,6 +2,12 @@
 
 All notable changes to this plugin are documented in this file.
 
+## 1.3.32 - 2026-04-01
+
+### Changed
+- README vollständig überarbeitet und mit den zentralen Plugin-Funktionen konsolidiert (öffentliche GitHub-Dokumentation).
+- KI-Hinweis in die README aufgenommen (kein entsprechender Hinweis im Code).
+
 ## 1.3.31 - 2026-03-31
 
 ### Changed
