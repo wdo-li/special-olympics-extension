@@ -2,6 +2,11 @@
 
 All notable changes to this plugin are documented in this file.
 
+## 1.3.35 - 2026-04-01
+
+### Added
+- General settings tab: beginner-friendly instructions for `ACF_ENCRYPTION_KEY` in `wp-config.php` (encrypted ACF fields), plus current configuration status.
+
 ## 1.3.34 - 2026-04-01
 
 ### Added

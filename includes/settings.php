@@ -518,6 +518,7 @@ function soe_render_settings_page() {
 								<a class="button button-small soe-jump-btn" href="#soe-card-general-debug"><?php esc_html_e( 'Debug', 'special-olympics-extension' ); ?></a>
 								<a class="button button-small soe-jump-btn" href="#soe-card-general-duration"><?php esc_html_e( 'Dauer', 'special-olympics-extension' ); ?></a>
 								<a class="button button-small soe-jump-btn" href="#soe-card-general-login"><?php esc_html_e( 'Login', 'special-olympics-extension' ); ?></a>
+								<a class="button button-small soe-jump-btn" href="#soe-card-general-encryption"><?php esc_html_e( 'Verschlüsselung', 'special-olympics-extension' ); ?></a>
 							</div>
 						</td>
 					</tr>
@@ -556,6 +557,26 @@ function soe_render_settings_page() {
 								<span id="soe_login_bg_preview" class="soe-media-preview"><?php echo $login_bg_id ? '<img src="' . esc_url( wp_get_attachment_image_url( $login_bg_id, 'medium' ) ) . '" alt="" style="max-height:48px;vertical-align:middle;margin-left:8px;" />' : ''; ?></span>
 							</p>
 							<p class="description"><?php esc_html_e( 'Leer lassen für die Standard-Grafiken des Plugins.', 'special-olympics-extension' ); ?></p>
+						</td>
+					</tr>
+					<tr id="soe-card-general-encryption">
+						<th scope="row"><?php esc_html_e( 'Verschlüsselte ACF-Felder', 'special-olympics-extension' ); ?></th>
+						<td>
+							<?php if ( defined( 'ACF_ENCRYPTION_KEY' ) && ACF_ENCRYPTION_KEY ) : ?>
+								<p><strong><?php esc_html_e( 'Aktueller Stand: Der Schlüssel ist in wp-config.php gesetzt.', 'special-olympics-extension' ); ?></strong></p>
+							<?php else : ?>
+								<p><strong><?php esc_html_e( 'Aktueller Stand: Es wird noch kein fester Schlüssel verwendet. WordPress leitet einen Schlüssel aus den Sicherheitseinstellungen ab – das kann nach einem Umzug oder einer Wiederherstellung aus dem Backup dazu führen, dass verschlüsselte Inhalte nicht mehr lesbar sind.', 'special-olympics-extension' ); ?></strong></p>
+							<?php endif; ?>
+							<p><?php esc_html_e( 'Manche Felder (ACF) können mit der Option „Wert in der Datenbank verschlüsseln“ gespeichert werden. Dafür braucht die Website einen festen Geheimschlüssel in der Konfigurationsdatei – vergleichbar mit einem Passwort, das nur der Server kennt.', 'special-olympics-extension' ); ?></p>
+							<p class="description"><?php esc_html_e( 'So trägst du ihn ein (einmalig, für diese Installation):', 'special-olympics-extension' ); ?></p>
+							<ol class="description" style="margin-left:1.25em; list-style:decimal;">
+								<li><?php esc_html_e( 'Öffne auf dem Server die Datei wp-config.php. Sie liegt im gleichen Ordner wie die Ordner wp-admin und wp-content.', 'special-olympics-extension' ); ?></li>
+								<li><?php esc_html_e( 'Suche die Zeile mit dem Text „That’s all, stop editing!“ (oder „Das war’s, bearbeite nichts mehr“).', 'special-olympics-extension' ); ?></li>
+								<li><?php esc_html_e( 'Direkt darüber fügst du eine neue Zeile ein. Ersetze den Beispieltext in den Anführungszeichen durch einen langen, zufälligen Text (z. B. aus einem Passwort-Manager). Niemand soll diesen Text kennen außer du bzw. dein Hosting.', 'special-olympics-extension' ); ?></li>
+								<li><?php esc_html_e( 'Datei speichern. Den Schlüssel nicht per E-Mail schicken, nicht ins Git-Repository legen und nicht auf Screenshots zeigen.', 'special-olympics-extension' ); ?></li>
+							</ol>
+							<p><code style="display:block; padding:8px 10px; background:#f0f0f1; border-radius:4px; margin-top:8px; white-space:pre-wrap; word-break:break-all;"><?php echo esc_html( "define( 'ACF_ENCRYPTION_KEY', 'hier-ein-langer-geheimer-text' );" ); ?></code></p>
+							<p class="description"><?php esc_html_e( 'Wichtig: Wenn du den Schlüssel später änderst, lassen sich bereits gespeicherte verschlüsselte Werte mit dem neuen Schlüssel nicht mehr entschlüsseln. Vor dem ersten produktiven Einsatz also den Schlüssel setzen und bei Bedarf sicher aufbewahren.', 'special-olympics-extension' ); ?></p>
 						</td>
 					</tr>
 				<?php elseif ( $active_tab === 'payroll' ) : ?>
