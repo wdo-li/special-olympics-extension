@@ -2,6 +2,19 @@
 
 All notable changes to this plugin are documented in this file.
 
+## 1.3.34 - 2026-04-01
+
+### Added
+- Release-Konsistenzprüfung ergänzt: Im Backend erscheint auf Plugin-/Update-Seiten ein Hinweis, wenn `SOE_PLUGIN_VERSION` und das neueste GitHub-Release-Tag voneinander abweichen.
+
+## 1.3.33 - 2026-04-01
+
+### Added
+- GitHub-Updatefunktion ergänzt: Das Plugin prüft öffentliche Releases aus `wdo-li/special-olympics-extension` und meldet neue Versionen im WordPress-Backend.
+
+### Notes
+- Empfohlen ist ein Release-Asset `special-olympics-extension.zip` mit korrekt benanntem Plugin-Ordner; alternativ wird auf GitHub-Zipball zurückgefallen.
+
 ## 1.3.32 - 2026-04-01
 
 ### Changed

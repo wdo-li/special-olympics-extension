@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Special Olympics Extension
  * Description:     Erweiterung für Special Olympics, inkl. Trainingsverwaltung und Mitgliederverwaltung.
- * Version:         1.3.32
+ * Version:         1.3.34
  * Author:          Special Olympics Entwicklerteam
  */
 
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 /** Plugin version. */
-define( 'SOE_PLUGIN_VERSION', '1.3.32' );
+define( 'SOE_PLUGIN_VERSION', '1.3.34' );
 
 register_activation_hook( __FILE__, 'soe_plugin_activation' );
 function soe_plugin_activation() {
@@ -70,6 +70,7 @@ require_once __DIR__ . '/includes/taxonomy-solie-status.php';
 require_once __DIR__ . '/includes/settings.php';
 require_once __DIR__ . '/includes/help-widget.php';
 require_once __DIR__ . '/includes/user-welcome-email.php';
+require_once __DIR__ . '/includes/github-updater.php';
 require_once __DIR__ . '/includes/mitglied-capabilities.php';
 require_once __DIR__ . '/includes/post-type-mitglied.php';
 require_once __DIR__ . '/includes/meine-athleten-page.php';
