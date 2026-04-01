@@ -1,0 +1,264 @@
+/**
+ * Person Picker Styles
+ *
+ * @package Special_Olympics_Extension
+ */
+
+.soe-person-picker {
+	position: relative;
+	margin-bottom: 10px;
+}
+
+.soe-pp-search {
+	width: 100%;
+	padding: 8px 10px;
+	font-size: 14px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	box-sizing: border-box;
+}
+
+.soe-pp-search:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.soe-pp-search:disabled {
+	background: #f0f0f1;
+	cursor: not-allowed;
+}
+
+.soe-pp-results {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	z-index: 1000;
+	background: #fff;
+	border: 1px solid #8c8f94;
+	border-top: none;
+	border-radius: 0 0 4px 4px;
+	max-height: 250px;
+	overflow-y: auto;
+	display: none;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.soe-pp-result-item {
+	padding: 8px 12px;
+	cursor: pointer;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.soe-pp-result-item:last-child {
+	border-bottom: none;
+}
+
+.soe-pp-result-item:hover {
+	background: #f0f6fc;
+}
+
+.soe-pp-result-item small {
+	color: #666;
+}
+
+.soe-pp-no-results {
+	padding: 12px;
+	color: #666;
+	font-style: italic;
+}
+
+.soe-pp-selected {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+	min-height: 10px;
+}
+
+.soe-pp-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	background: #f0f6fc;
+	border: 1px solid #c3c4c7;
+	border-radius: 3px;
+	font-size: 13px;
+}
+
+.soe-pp-remove {
+	background: none;
+	border: none;
+	color: #cc1818;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	padding: 0 2px;
+	margin: 0;
+}
+
+.soe-pp-remove:hover {
+	color: #a00;
+}
+
+.soe-pp-hidden {
+	display: none;
+}
+
+/* Field groups */
+.soe-field-group {
+	margin-bottom: 15px;
+}
+
+.soe-field-group label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 5px;
+}
+
+.soe-field-group .description {
+	font-size: 12px;
+	color: #666;
+	margin-top: 4px;
+}
+
+.soe-field-row {
+	display: flex;
+	gap: 20px;
+	flex-wrap: wrap;
+}
+
+.soe-field-row .soe-field-group {
+	flex: 1;
+	min-width: 200px;
+}
+
+/* Native form controls styling */
+.soe-native-input,
+.soe-native-select,
+.soe-native-textarea {
+	width: 100%;
+	padding: 8px 10px;
+	font-size: 14px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	box-sizing: border-box;
+}
+
+.soe-native-input:focus,
+.soe-native-select:focus,
+.soe-native-textarea:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.soe-native-input:disabled,
+.soe-native-select:disabled,
+.soe-native-textarea:disabled {
+	background: #f0f0f1;
+	cursor: not-allowed;
+}
+
+/* Readonly state */
+.soe-readonly .soe-pp-item {
+	background: #f0f0f1;
+}
+
+/* Training attendance: desktop = wide table; tablet/small = date dropdown + single-date table */
+.soe-attendance-desktop {
+	display: block;
+}
+.soe-attendance-mobile {
+	display: none;
+}
+@media (max-width: 1024px) {
+	.soe-attendance-desktop {
+		display: none;
+	}
+	.soe-attendance-mobile {
+		display: block;
+	}
+}
+
+.soe-attendance-table-wrap {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	margin-bottom: 1em;
+}
+.soe-attendance-table {
+	min-width: 320px;
+}
+/* Sticky first column (desktop wide table only) so "Person" stays visible when scrolling horizontally */
+.soe-attendance-desktop .soe-attendance-table thead th:first-child,
+.soe-attendance-desktop .soe-attendance-table tbody td:first-child {
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
+}
+.soe-attendance-desktop .soe-attendance-table thead th:first-child {
+	background: #f0f0f1;
+}
+.soe-attendance-desktop .soe-attendance-table tbody tr:nth-child(odd) td:first-child {
+	background: #fff;
+}
+.soe-attendance-desktop .soe-attendance-table tbody tr:nth-child(even) td:first-child {
+	background: #f6f7f7;
+}
+@media (max-width: 782px) {
+	.soe-attendance-table th,
+	.soe-attendance-table td {
+		padding: 8px 6px;
+		font-size: 13px;
+	}
+	.soe-attendance-table .soe-attendance-cb {
+		width: 24px;
+		height: 24px;
+	}
+}
+
+/* Sessions list: add/remove */
+.soe-sessions-list { list-style: none; margin: 0; padding: 0; }
+.soe-sessions-list li { padding: 4px 0; display: flex; align-items: center; gap: 8px; }
+.soe-sessions-list li.soe-sessions-empty { color: #646970; }
+.soe-remove-session { color: #b32d2e; font-size: 18px; line-height: 1; padding: 0 4px; }
+.soe-remove-session:hover { color: #dc3232; }
+.soe-sessions-add { margin-bottom: 8px; }
+.soe-sessions-add .soe-add-session { margin-top: 10px; }
+.soe-session-date-input { margin-right: 8px; }
+.soe-session-msg.updated { color: #00a32a; }
+.soe-session-msg.error { color: #b32d2e; }
+
+.soe-readonly .soe-native-input,
+.soe-readonly .soe-native-select {
+	background: #f0f0f1;
+	pointer-events: none;
+}
+
+/* Single-select mode: payroll person picker */
+.soe-payroll-person-picker {
+	max-width: 400px;
+}
+
+.soe-payroll-person-picker .soe-pp-results {
+	border-top: 1px solid #8c8f94;
+	border-radius: 4px;
+	margin-top: 4px;
+}
+
+.soe-payroll-person-picker .soe-pp-selected {
+	margin-top: 10px;
+}
+
+.soe-payroll-person-picker .soe-pp-item {
+	font-size: 14px;
+	padding: 6px 10px;
+}
+
+/* Form table adjustments */
+.form-table .soe-person-picker {
+	margin-bottom: 0;
+}

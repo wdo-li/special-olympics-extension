@@ -1,0 +1,191 @@
+/**
+ * Login page styles for Special Olympics Extension.
+ * Matches SO branding: #c41e3a, card layout, typography.
+ */
+
+/* Base and centering (background image set via inline style in PHP) */
+body.login {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+	color: #333;
+	line-height: 1.5;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	box-sizing: border-box;
+}
+
+/* Overlay: makes background image more transparent / faded */
+body.login::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	background: rgba(255, 255, 255, 0.5);
+	pointer-events: none;
+	z-index: 0;
+}
+
+/* Login container – no rounded corners, centered via body flex */
+#login {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	max-width: 420px;
+	padding: 2rem 2.5rem;
+	margin: 0;
+	background: #fafafa;
+	border-radius: 0;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+
+#login h1 {
+	margin: 0 0 1.5rem;
+}
+
+/* Logo (SO Logo-center.svg) – background set in PHP, hide link text */
+#login h1 a {
+	display: block;
+	width: 100%;
+	height: 60px;
+	text-indent: -9999px;
+	overflow: hidden;
+	background-size: contain;
+	background-position: center;
+	background-repeat: no-repeat;
+	text-decoration: none;
+}
+
+/* Form typography and spacing */
+/* Form container – no border (overrides WordPress default) */
+.login form,
+#loginform {
+	margin-top: 0;
+	padding: 0;
+	border: none;
+	box-shadow: none;
+}
+
+#loginform label {
+	font-weight: 600;
+	color: #444;
+	font-size: 0.95rem;
+}
+
+#loginform .input,
+#loginform input[type="text"],
+#loginform input[type="password"],
+#loginform input[type="email"] {
+	width: 100%;
+	padding: 0.65rem 0.75rem;
+	font-size: 1rem;
+	border: 1px solid #ccc;
+	border-radius: 8px;
+	background: #fff;
+	color: #333;
+	box-sizing: border-box;
+}
+
+#loginform .input:focus,
+#loginform input[type="text"]:focus,
+#loginform input[type="password"]:focus,
+#loginform input[type="email"]:focus {
+	outline: none;
+	border-color: #c41e3a;
+	box-shadow: 0 0 0 2px rgba(196, 30, 58, 0.15);
+}
+
+/* Submit button – SO red */
+#loginform .button-primary,
+#wp-submit,
+.login form .submit input {
+	width: 100%;
+	padding: 0.75rem 1.75rem;
+	font-size: 1rem;
+	font-weight: 600;
+	background: #c41e3a !important;
+	border: none !important;
+	border-radius: 0;
+	color: #fff !important;
+	cursor: pointer;
+	transition: background 0.2s;
+	box-shadow: none !important;
+	text-shadow: none;
+	height: auto;
+	line-height: 1.4;
+	outline: none;
+}
+
+#loginform .button-primary:hover,
+#wp-submit:hover,
+.login form .submit input:hover {
+	background: #a01830 !important;
+	border: none !important;
+	color: #fff !important;
+}
+
+#loginform .button-primary:active,
+#wp-submit:active,
+.login form .submit input:active {
+	transform: scale(0.99);
+}
+
+/* "Passwort vergessen?" – SO red with + icon */
+#nav a,
+.login #nav a {
+	color: #c41e3a;
+	text-decoration: none;
+}
+
+#nav a::before {
+	content: "+ ";
+	font-weight: 600;
+}
+
+#nav a:hover,
+.login #nav a:hover {
+	color: #a01830;
+	text-decoration: underline;
+}
+
+/* Hide "← Zu SOLie Datenbank" and language switcher */
+#backtoblog,
+.login .language-switcher {
+	display: none !important;
+}
+
+/* Messages */
+.login .message,
+.login .success {
+	padding: 0.75rem 1rem;
+	margin-bottom: 1rem;
+	background: #d4edda;
+	color: #155724;
+	border-radius: 8px;
+	font-size: 0.95rem;
+	border-left: 4px solid #28a745;
+}
+
+#login_error {
+	padding: 0.75rem 1rem;
+	margin-bottom: 1rem;
+	background: #f8d7da;
+	color: #721c24;
+	border-radius: 8px;
+	font-size: 0.95rem;
+	border-left: 4px solid #c41e3a;
+}
+
+/* Checkbox (e.g. "Remember me") */
+.login input[type="checkbox"] {
+	accent-color: #c41e3a;
+}
+
+/* Responsive */
+@media screen and (max-width: 480px) {
+	#login {
+		max-width: 100%;
+		margin: 1rem;
+		padding: 1.5rem 1.25rem;
+	}
+}

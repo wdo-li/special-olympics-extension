@@ -1,0 +1,33 @@
+/* Flatpickr theme for Training/Event admin */
+.flatpickr-calendar {
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+	background: #2271b1;
+	border-color: #2271b1;
+}
+.flatpickr-day:hover {
+	background: #f0f0f1;
+	border-color: #f0f0f1;
+}
+.flatpickr-day.flatpickr-disabled {
+	color: #a7aaad;
+}
+.flatpickr-months .flatpickr-month {
+	background: #f6f7f7;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+.flatpickr-current-month .numInputWrapper:hover {
+	background: #f0f0f1;
+}
+.flatpickr-weekdays span.flatpickr-weekday {
+	color: #50575e;
+}
+span.flatpickr-weekday.flatpickr-weekday:nth-child(6),
+span.flatpickr-weekday.flatpickr-weekday:nth-child(7) {
+	color: #d63638;
+}

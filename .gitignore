@@ -1,0 +1,23 @@
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs / temp
+*.log
+*.tmp
+
+# OS / tooling
+/.phpunit.result.cache
+/.cache/
+
+# Secrets (do not commit)
+.env
+.env.*
+
+# Composer (keep vendor because plugin ships dependencies)
+# If you later switch to CI-built release zips, you can ignore /vendor here.
+# /vendor/
+

@@ -1,0 +1,241 @@
+/*
+ * Modernized look for the plugin settings screen.
+ *
+ * This stylesheet is intentionally limited to `soe-settings-table` and
+ * related classes so it doesn't affect other WP admin tables.
+ */
+
+.soe-settings-table {
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.soe-settings-table > tbody > tr {
+	display: block;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	overflow: hidden;
+	margin: 0 0 20px 0;
+}
+
+.soe-settings-table > tbody > tr > th,
+.soe-settings-table > tbody > tr > td {
+	display: block;
+}
+
+.soe-settings-table > tbody > tr > th {
+	padding: 16px 16px 0 16px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.soe-settings-table > tbody > tr > td {
+	padding: 12px 16px 16px 16px;
+}
+
+.soe-mail-toggle-card {
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 0;
+	background: #fff;
+	margin: 12px 0;
+}
+
+.soe-mail-toggle-card > summary {
+	list-style: none;
+	cursor: pointer;
+	padding: 14px 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	justify-content: space-between;
+	font-weight: 600;
+	color: #1d2327;
+	background: #f6f7f7;
+}
+
+.soe-mail-toggle-card > summary::-webkit-details-marker {
+	display: none;
+}
+
+.soe-mail-toggle-summary-label {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.soe-mail-toggle-summary-label input[type="checkbox"] {
+	margin: 0;
+}
+
+.soe-mail-toggle-card-body {
+	padding: 14px 16px 16px 16px;
+}
+
+.soe-settings-jump-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0 0 14px 0;
+}
+
+.soe-settings-jump-buttons .soe-jump-btn {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.2;
+	padding: 7px 14px;
+}
+
+.soe-settings-tab-title > td {
+	padding-bottom: 10px;
+}
+
+.soe-settings-tab-title h3 {
+	margin: 0 0 12px 0;
+	font-size: 16px;
+	font-weight: 700;
+	color: #1d2327;
+}
+
+.soe-settings-tab-heading {
+	margin: 0 0 10px 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: #646970;
+}
+
+.soe-mail-template-card {
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	background: #fff;
+	padding: 0;
+	margin: 12px 0;
+}
+
+.soe-mail-template-card-header {
+	background: #f6f7f7;
+	border-bottom: 1px solid #e5e5e5;
+	padding: 14px 16px;
+}
+
+.soe-mail-template-card-header h4 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: #1d2327;
+}
+
+.soe-mail-template-card-body {
+	padding: 14px 16px 16px 16px;
+}
+
+.soe-mail-template-two-col {
+	display: grid;
+	grid-template-columns: 1.2fr 0.8fr;
+	gap: 14px;
+	align-items: start;
+	margin-top: 10px;
+}
+
+.soe-mail-template-col label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.soe-mail-template-preview-col {
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #f6f7f7;
+	padding: 12px;
+}
+
+.soe-mail-template-preview-col h5 {
+	margin: 0 0 10px 0;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.soe-mail-template-two-col p.description {
+	margin-bottom: 0;
+}
+
+.soe-mail-template-card label[for="soe_mail_subject"] {
+	font-weight: 700;
+	display: block;
+	margin-bottom: 6px;
+}
+
+.soe-mail-template-card #soe_mail_subject {
+	width: 50%;
+	display: block;
+}
+
+.soe-mail-categories + .soe-settings-jump-buttons {
+	margin-top: 0;
+}
+
+.soe-mail-categories .description {
+	color: #646970;
+	font-size: 12px;
+	margin-top: 8px;
+}
+
+.soe-mail-preview-subject,
+.soe-mail-preview-body {
+	margin: 0;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.soe-mail-preview-subject {
+	font-weight: 600;
+}
+
+.soe-mail-preview-body {
+	margin-top: 10px;
+	max-height: 260px;
+	overflow: auto;
+}
+
+@media (max-width: 782px) {
+	.soe-mail-template-two-col {
+		grid-template-columns: 1fr;
+	}
+
+	.soe-mail-template-card #soe_mail_subject {
+		width: 100%;
+	}
+}
+
+.soe-mail-categories {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 12px;
+}
+
+.soe-mail-toggle-line {
+	margin: 0 0 12px 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.soe-mail-toggle-line label {
+	margin: 0;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+}
+
+.soe-mail-toggle-line input[type="checkbox"] {
+	margin: 0;
+}
+
+.soe-mail-category-title {
+	flex: 1;
+}
+

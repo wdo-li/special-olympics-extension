@@ -1,0 +1,1 @@
+{"name":"special-olympics/extension","description":"Special Olympics Extension – Lohnabrechnung PDF","require":{"dompdf/dompdf":"^2.0","phpoffice/phpspreadsheet":"^1.29"},"config":{"allow-plugins":{"dompdf/dompdf":true}},"autoload":{"classmap":[]}}
