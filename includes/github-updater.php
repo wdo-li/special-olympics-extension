@@ -18,6 +18,11 @@ add_filter( 'pre_set_site_transient_update_plugins', 'soe_github_check_for_updat
 add_filter( 'plugins_api', 'soe_github_plugins_api', 10, 3 );
 add_filter( 'upgrader_source_selection', 'soe_github_fix_source_folder', 10, 4 );
 add_action( 'admin_notices', 'soe_github_release_version_notice' );
+add_action( 'admin_notices', 'soe_github_manual_check_result_notice' );
+
+$soe_github_plugin_basename = plugin_basename( dirname( __DIR__ ) . '/plugin.php' );
+add_filter( 'plugin_action_links_' . $soe_github_plugin_basename, 'soe_github_plugin_action_links' );
+add_action( 'admin_init', 'soe_github_handle_manual_update_check', 0 );
 
 /**
  * Returns plugin basename for update payload.
@@ -224,6 +229,123 @@ function soe_github_fix_source_folder( $source, $remote_source, $upgrader, $hook
 
 	$renamed = @rename( $source, $desired );
 	return $renamed ? $desired : $source;
+}
+
+/**
+ * Adds "Check for updates" link on the plugin row (for sites without Dashboard → Updates menu).
+ *
+ * @param array $links Existing action links.
+ * @return array
+ */
+function soe_github_plugin_action_links( $links ) {
+	if ( ! current_user_can( 'update_plugins' ) ) {
+		return $links;
+	}
+
+	$url = wp_nonce_url(
+		add_query_arg( 'soe_check_github_updates', '1', admin_url( 'plugins.php' ) ),
+		'soe_check_github_updates'
+	);
+
+	$links['soe_check_github_updates'] = sprintf(
+		'<a href="%s">%s</a>',
+		esc_url( $url ),
+		esc_html__( 'Nach Updates suchen', 'special-olympics-extension' )
+	);
+
+	return $links;
+}
+
+/**
+ * Forces plugin update check (includes GitHub release via this plugin’s transient filter).
+ *
+ * @return void
+ */
+function soe_github_handle_manual_update_check() {
+	if ( empty( $_GET['soe_check_github_updates'] ) || '1' !== (string) $_GET['soe_check_github_updates'] ) {
+		return;
+	}
+
+	if ( ! current_user_can( 'update_plugins' ) ) {
+		wp_die( esc_html__( 'Sie sind nicht berechtigt, Plugins zu aktualisieren.', 'special-olympics-extension' ) );
+	}
+
+	check_admin_referer( 'soe_check_github_updates' );
+
+	delete_site_transient( 'soe_github_latest_release' );
+	delete_site_transient( 'update_plugins' );
+
+	if ( ! function_exists( 'wp_update_plugins' ) ) {
+		require_once ABSPATH . 'wp-includes/update.php';
+	}
+	wp_update_plugins();
+
+	$plugin_file = soe_github_plugin_basename();
+	$transient   = get_site_transient( 'update_plugins' );
+	$has_update  = is_object( $transient ) && isset( $transient->response[ $plugin_file ] );
+	$new_version = '';
+	if ( $has_update && ! empty( $transient->response[ $plugin_file ]->new_version ) ) {
+		$new_version = (string) $transient->response[ $plugin_file ]->new_version;
+	}
+
+	set_transient(
+		'soe_github_check_notice_' . get_current_user_id(),
+		array(
+			'has_update'  => $has_update,
+			'new_version' => $new_version,
+		),
+		120
+	);
+
+	wp_safe_redirect( admin_url( 'plugins.php' ) );
+	exit;
+}
+
+/**
+ * Shows one-time notice after manual "Nach Updates suchen" from the plugin row.
+ *
+ * @return void
+ */
+function soe_github_manual_check_result_notice() {
+	if ( ! is_admin() || ! current_user_can( 'update_plugins' ) ) {
+		return;
+	}
+
+	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+	if ( ! $screen || 'plugins' !== $screen->id ) {
+		return;
+	}
+
+	$user_id = get_current_user_id();
+	$data    = get_transient( 'soe_github_check_notice_' . $user_id );
+	if ( ! is_array( $data ) ) {
+		return;
+	}
+
+	delete_transient( 'soe_github_check_notice_' . $user_id );
+
+	if ( ! empty( $data['has_update'] ) && ! empty( $data['new_version'] ) ) {
+		?>
+		<div class="notice notice-success is-dismissible">
+			<p>
+				<?php
+				printf(
+					/* translators: %s: new version number */
+					esc_html__( 'Update-Prüfung abgeschlossen. Version %s ist auf GitHub verfügbar. Nutzen Sie den Link „Jetzt aktualisieren“ in der Plugin-Liste.', 'special-olympics-extension' ),
+					esc_html( $data['new_version'] )
+				);
+				?>
+			</p>
+		</div>
+		<?php
+		return;
+	}
+
+	?>
+	<div class="notice notice-info is-dismissible">
+		<p><?php esc_html_e( 'Update-Prüfung abgeschlossen. Es wurde keine neuere Version auf GitHub gefunden als die derzeit installierte.', 'special-olympics-extension' ); ?></p>
+	</div>
+	<?php
 }
 
 /**

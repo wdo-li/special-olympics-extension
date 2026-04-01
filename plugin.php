@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Special Olympics Extension
  * Description:     Erweiterung für Special Olympics, inkl. Trainingsverwaltung und Mitgliederverwaltung.
- * Version:         1.3.35
+ * Version:         1.3.36
  * Author:          Special Olympics Entwicklerteam
  */
 
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 /** Plugin version. */
-define( 'SOE_PLUGIN_VERSION', '1.3.35' );
+define( 'SOE_PLUGIN_VERSION', '1.3.36' );
 
 register_activation_hook( __FILE__, 'soe_plugin_activation' );
 function soe_plugin_activation() {

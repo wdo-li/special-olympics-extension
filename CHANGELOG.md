@@ -2,6 +2,11 @@
 
 All notable changes to this plugin are documented in this file.
 
+## 1.3.36 - 2026-04-01
+
+### Added
+- Plugin list: action link **Nach Updates suchen** triggers a fresh GitHub release check (clears plugin update and release cache, runs `wp_update_plugins()`), then shows a short admin notice with the result.
+
 ## 1.3.35 - 2026-04-01
 
 ### Added
