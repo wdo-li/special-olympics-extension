@@ -2,6 +2,11 @@
 
 All notable changes to this plugin are documented in this file.
 
+## 1.3.37 - 2026-04-01
+
+### Changed
+- General settings: clearer guidance for `ACF_ENCRYPTION_KEY` (random characters, minimum length, recommended length, 64-char hex example as format-only).
+
 ## 1.3.36 - 2026-04-01
 
 ### Added

@@ -572,10 +572,12 @@ function soe_render_settings_page() {
 							<ol class="description" style="margin-left:1.25em; list-style:decimal;">
 								<li><?php esc_html_e( 'Öffne auf dem Server die Datei wp-config.php. Sie liegt im gleichen Ordner wie die Ordner wp-admin und wp-content.', 'special-olympics-extension' ); ?></li>
 								<li><?php esc_html_e( 'Suche die Zeile mit dem Text „That’s all, stop editing!“ (oder „Das war’s, bearbeite nichts mehr“).', 'special-olympics-extension' ); ?></li>
-								<li><?php esc_html_e( 'Direkt darüber fügst du eine neue Zeile ein. Ersetze den Beispieltext in den Anführungszeichen durch einen langen, zufälligen Text (z. B. aus einem Passwort-Manager). Niemand soll diesen Text kennen außer du bzw. dein Hosting.', 'special-olympics-extension' ); ?></li>
+								<li><?php esc_html_e( 'Direkt darüber fügst du eine neue Zeile ein. Ersetze den Platzhalter in den Anführungszeichen durch eine eigene, zufällige Zeichenfolge (siehe unten). Niemand soll diese kennen außer du bzw. dein Hosting.', 'special-olympics-extension' ); ?></li>
 								<li><?php esc_html_e( 'Datei speichern. Den Schlüssel nicht per E-Mail schicken, nicht ins Git-Repository legen und nicht auf Screenshots zeigen.', 'special-olympics-extension' ); ?></li>
 							</ol>
-							<p><code style="display:block; padding:8px 10px; background:#f0f0f1; border-radius:4px; margin-top:8px; white-space:pre-wrap; word-break:break-all;"><?php echo esc_html( "define( 'ACF_ENCRYPTION_KEY', 'hier-ein-langer-geheimer-text' );" ); ?></code></p>
+							<p class="description"><?php esc_html_e( 'Der Wert soll aus zufälligen Zeichen bestehen (keine normalen Wörter, kein Geburtsdatum usw.) – am einfachsten erzeugst du ihn mit einem Passwort-Manager („zufälliges Passwort“) oder einem Online-Generator. Mindestens 32 Zeichen; empfohlen sind 64 oder mehr (mehr Entropie = robuster).', 'special-olympics-extension' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Nur ein Format- und Längenbeispiel (kein echter Schlüssel – bitte selbst zufällig erzeugen):', 'special-olympics-extension' ); ?></p>
+							<p><code style="display:block; padding:8px 10px; background:#f0f0f1; border-radius:4px; margin-top:8px; white-space:pre-wrap; word-break:break-all;"><?php echo esc_html( "define( 'ACF_ENCRYPTION_KEY', 'a1f3c8e92b470d5e6f1a834c9b2e7d0fa4b8c1e5d9f2a6703b4e8c6d1f9a5b2c' );" ); ?></code></p>
 							<p class="description"><?php esc_html_e( 'Wichtig: Wenn du den Schlüssel später änderst, lassen sich bereits gespeicherte verschlüsselte Werte mit dem neuen Schlüssel nicht mehr entschlüsseln. Vor dem ersten produktiven Einsatz also den Schlüssel setzen und bei Bedarf sicher aufbewahren.', 'special-olympics-extension' ); ?></p>
 						</td>
 					</tr>
