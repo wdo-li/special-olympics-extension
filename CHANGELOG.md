@@ -5,197 +5,197 @@ All notable changes to this plugin are documented in this file.
 ## 1.3.34 - 2026-04-01
 
 ### Added
-- Release-Konsistenzprüfung ergänzt: Im Backend erscheint auf Plugin-/Update-Seiten ein Hinweis, wenn `SOE_PLUGIN_VERSION` und das neueste GitHub-Release-Tag voneinander abweichen.
+- Added release consistency check: an admin notice appears on Plugin/Update pages when `SOE_PLUGIN_VERSION` and the latest GitHub release tag do not match.
 
 ## 1.3.33 - 2026-04-01
 
 ### Added
-- GitHub-Updatefunktion ergänzt: Das Plugin prüft öffentliche Releases aus `wdo-li/special-olympics-extension` und meldet neue Versionen im WordPress-Backend.
+- Added GitHub update integration: the plugin checks public releases from `wdo-li/special-olympics-extension` and reports new versions in the WordPress backend.
 
 ### Notes
-- Empfohlen ist ein Release-Asset `special-olympics-extension.zip` mit korrekt benanntem Plugin-Ordner; alternativ wird auf GitHub-Zipball zurückgefallen.
+- Recommended release asset: `special-olympics-extension.zip` with the correct plugin folder name; fallback uses GitHub zipball.
 
 ## 1.3.32 - 2026-04-01
 
 ### Changed
-- README vollständig überarbeitet und mit den zentralen Plugin-Funktionen konsolidiert (öffentliche GitHub-Dokumentation).
-- KI-Hinweis in die README aufgenommen (kein entsprechender Hinweis im Code).
+- Fully revised README and consolidated core plugin features (public GitHub documentation).
+- Added AI-assistance note to the README (no corresponding note in code).
 
 ## 1.3.31 - 2026-03-31
 
 ### Changed
-- Mitglied-Editor: Primärer Button in der vereinfachten Submit-Box wurde auf `Jetzt speichern` vereinheitlicht (statt Publish/Update/Submit for Review).
+- Member editor: standardized the primary button in the simplified submit box to `Jetzt speichern` (instead of Publish/Update/Submit for Review).
 
 ## 1.3.30 - 2026-03-31
 
 ### Changed
-- Mitglied-Editor: Die vereinfachte Submit-Box für Nicht-Admins wurde von `Veröffentlichen` auf `Speichern` umbenannt.
+- Member editor: renamed the simplified submit box title for non-admins from `Publish` to `Save`.
 
 ## 1.3.29 - 2026-03-31
 
 ### Changed
-- Rollen-Priorität im Mitglied-Editor angepasst: Bei kombinierten Rollen `ansprechperson` + `leiter_in`/`hauptleiter_in` werden `Events` und `Sportarten` nicht mehr ausgeblendet.
-- Notfallkontakt-Autofill/Read-only-Logik auf reine `ansprechperson` eingeschränkt, damit kombinierte Leiter/Hauptleiter nicht durch Ansprechperson-Sonderlogik eingeschränkt werden.
+- Adjusted role precedence in member editor: for combined roles `ansprechperson` + `leiter_in`/`hauptleiter_in`, `Events` and `Sports` are no longer hidden.
+- Restricted emergency-contact autofill/read-only logic to pure `ansprechperson`, so combined Leiter/Hauptleiter users are not limited by Ansprechperson-only rules.
 
 ## 1.3.28 - 2026-03-31
 
 ### Added
-- ACF: Field-Gruppen für `Mitglied` und `Contact` werden nun automatisch aus allen JSON-Dateien im Ordner `acf/` geladen (kein manueller Import mehr nötig).
-- Contact-Editor: Neue ACF-Felder für den CPT `contact` werden über `acf/acf-export-contact.json` eingebunden.
-- Taxonomie: Neue, nicht-öffentliche Taxonomie `SOLie-Status` (`solie_status`) für den CPT `contact` zum Kategorisieren von Kontakten.
+- ACF: field groups for `Member` and `Contact` are now auto-loaded from all JSON files in the `acf/` folder (no manual import required).
+- Contact editor: added ACF fields for CPT `contact` via `acf/acf-export-contact.json`.
+- Taxonomy: added new non-public taxonomy `SOLie-Status` (`solie_status`) for CPT `contact` to categorize contacts.
 
 ### Changed
-- ACF-Loader: Statt einer einzelnen Export-Datei (`acf-export-2026-02-14.json` bzw. `acf-export-mitglied.json`) werden nun alle JSON-Exporte im Unterordner `acf/` geladen, um zukünftige Feldgruppen einfacher zu ergänzen.
+- ACF loader: instead of a single export file (`acf-export-2026-02-14.json` / `acf-export-mitglied.json`), all JSON exports in the `acf/` subfolder are now loaded to simplify future field-group extensions.
 
 ## 1.3.27 - 2026-03-30
 
 ### Changed
-- Mitglied-Editor: Für Datensätze mit Rolle `ansprechperson` werden die Meta-Box `Events` sowie die Taxonomie-Box `Sportarten` ausgeblendet.
+- Member editor: for records with role `ansprechperson`, the `Events` meta box and `Sports` taxonomy box are hidden.
 
 ## 1.3.26 - 2026-03-30
 
 ### Fixed
-- ACF Checkbox: `disabled`-Wert für Feld „Ich bin“ korrigiert (Array statt bool), plus globaler Guard für ungültige Checkbox-`disabled`-Werte.
+- ACF checkbox: fixed `disabled` value for field “Ich bin” (array instead of bool), plus global guard for invalid checkbox `disabled` values.
 
 ## 1.3.25 - 2026-03-30
 
 ### Fixed
-- ACF: Zusätzliche Normalisierung für Checkbox-`default_value` und globalen `prepare_field`-Fallback ergänzt, um `array_map(..., true)`-Fatals zu vermeiden.
+- ACF: added extra normalization for checkbox `default_value` and a global `prepare_field` fallback to avoid `array_map(..., true)` fatals.
 
 ## 1.3.24 - 2026-03-30
 
 ### Fixed
-- ACF: Globale Absicherung für Checkbox-Felder ergänzt, damit fehlerhafte boolesche Werte (z.B. `true`) vor dem Rendern auf Arrays normalisiert werden.
+- ACF: added global safeguard for checkbox fields so invalid boolean values (e.g. `true`) are normalized to arrays before rendering.
 
 ## 1.3.23 - 2026-03-30
 
 ### Fixed
-- Mitglied-Editor: Fatal Error beim Rendern des ACF-Checkbox-Felds „Ich bin“ behoben (Wert wird robust auf Array normalisiert).
+- Member editor: fixed fatal error when rendering ACF checkbox field “Ich bin” (value is robustly normalized to an array).
 
 ## 1.3.22 - 2026-03-30
 
 ### Changed
-- Mitglied-Editor: Feld „Ich bin“ auch für Admins read-only/disabled gesetzt.
+- Member editor: set field “Ich bin” to read-only/disabled for admins as well.
 
 ## 1.3.21 - 2026-03-30
 
 ### Changed
-- Mitglied-Editor: Weg A umgesetzt – Feld „Ich bin“ wieder sichtbar für stabile ACF-Logik; für Nicht-Admins nur read-only/disabled.
+- Member editor: implemented approach A — field “Ich bin” visible again for stable ACF logic; read-only/disabled for non-admins.
 
 ## 1.3.20 - 2026-03-30
 
 ### Changed
-- Mitglied-Editor: ACF-Feld „Ich bin“ wieder wie zuvor ausgeblendet.
+- Member editor: ACF field “Ich bin” hidden again as before.
 
 ## 1.3.19 - 2026-03-30
 
 ### Changed
-- Mitglied-Editor: ACF-Feld „Ich bin“ für Tests wieder eingeblendet.
+- Member editor: ACF field “Ich bin” re-enabled for testing.
 
 ## 1.3.18 - 2026-03-30
 
 ### Changed
-- Help/Kontakt-Widget: Farbe/Branding auf SOLIE-Rot umgestellt (statt blau).
+- Help/contact widget: switched color/branding to SOLIE red (instead of blue).
 
 ## 1.3.17 - 2026-03-30
 
 ### Changed
-- Help/Kontakt-Widget: Ecken des geöffneten Panels abgerundet (clipped).
+- Help/contact widget: rounded corners on opened panel (clipped).
 
 ## 1.3.16 - 2026-03-30
 
 ### Changed
-- Help/Kontakt-Widget: Info-Text an gewünschte Formulierung angepasst.
+- Help/contact widget: adjusted info text to requested wording.
 
 ## 1.3.15 - 2026-03-30
 
 ### Changed
-- Help/Kontakt-Widget: Info-Text ersetzt und Header-Design (ohne Fotos) angepasst.
+- Help/contact widget: replaced info text and adjusted header design (without photos).
 
 ## 1.3.14 - 2026-03-30
 
 ### Changed
-- Help/Kontakt-Widget: „?“ Icon besser zentriert.
+- Help/contact widget: improved “?” icon centering.
 
 ## 1.3.13 - 2026-03-30
 
 ### Changed
-- Help/Kontakt-Widget: Info-Text „Schreib uns kurz…“ weniger fett dargestellt.
+- Help/contact widget: info text “Schreib uns kurz…” shown with lighter weight.
 
 ## 1.3.12 - 2026-03-30
 
 ### Changed
-- Help/Kontakt-Widget: „?“-Icon deutlich größer (ca. 40px) und zentriert.
+- Help/contact widget: made “?” icon significantly larger (about 40px) and centered.
 
 ## 1.3.11 - 2026-03-30
 
 ### Changed
-- Settings: Tab-Überschriften dezenter und als Teil des Jump-Blocks dargestellt (kein zweiter Block).
+- Settings: made tab headings subtler and displayed them as part of the jump block (no second block).
 
 ## 1.3.10 - 2026-03-30
 
 ### Changed
-- Settings: „Öffentliche Anwesenheit“ Card vom Tab „Allgemein“ in „Mobile-Anwesenheitsmodul“ verschoben.
+- Settings: moved “Public Attendance” card from tab “General” to “Mobile Attendance Module”.
 
 ## 1.3.9 - 2026-03-30
 
 ### Changed
-- Settings: „Lohnabrechnung Mail – Betreff“ Label und Eingabefeld untereinander ausgerichtet.
+- Settings: aligned “Payroll Mail – Subject” label and input vertically.
 
 ## 1.3.8 - 2026-03-30
 
 ### Changed
-- Settings: In jedem Tab eine Register-Überschrift oberhalb der Jump-Buttons ergänzt.
-- Settings: Jump-Buttons in der Schriftgröße/Padding verbessert.
+- Settings: added a section heading above jump buttons in each tab.
+- Settings: improved jump-button font size/padding.
 
 ## 1.3.7 - 2026-03-30
 
 ### Changed
-- Settings: „Lohnabrechnung Mail – Betreff“ fett und Betreff-Input auf 50% Breite gesetzt.
+- Settings: made “Payroll Mail – Subject” bold and set subject input width to 50%.
 
 ## 1.3.6 - 2026-03-30
 
 ### Changed
-- Settings: Abstand innerhalb der „Lohnabrechnung Mail – Text“-Sektion verbessert.
+- Settings: improved spacing inside “Payroll Mail – Text” section.
 
 ## 1.3.5 - 2026-03-30
 
 ### Changed
-- Settings: Sprung-Buttons (Jump-Buttons) im Settings-Layout haben eine größere Schrift und deutlichere Padding/Click-Höhe.
+- Settings: jump buttons in the settings layout now use larger text and clearer padding/click height.
 
 ## 1.3.4 - 2026-03-30
 
 ### Changed
-- Settings: „Lohnabrechnung Mail“-Karte im Benachrichtigungen-Tab erhält den gleichen Karten-Header/Abstände wie die anderen Cards.
+- Settings: “Payroll Mail” card in notifications tab now uses the same card header/spacing as other cards.
 
 ## 1.3.3 - 2026-03-30
 
 ### Changed
-- Settings: Benachrichtigungen-Tab weniger überladen (Kategorie-Karten nicht mehr standardmäßig alle geöffnet).
-- Help Widget: „?“ Icon weniger fett und besser zentriert/ausgerichtet.
+- Settings: reduced clutter in notifications tab (category cards are no longer all open by default).
+- Help widget: made “?” icon less bold and better centered/aligned.
 
 ## 1.3.2 - 2026-03-30
 
 ### Changed
-- Settings: Tabs/Content neu strukturiert: „Darstellung“ in „Allgemein“, Lohnabrechnung-Mailfelder in „Benachrichtigungen“, Attendance Security umbenannt zu „Mobile-Anwesenheitsmodul“.
-- Settings: In jedem Tab „Jump“-Buttons hinzugefügt, die zu den jeweiligen Cards scrollen; Lohnabrechnung Mailtext nun zweispaltig (Text links, Vorschau rechts).
-- Help Widget: Icon auf „?“ umgestellt (ca. 10px höher), Panel zeigt kurzes Info-Textstück + die konfigurierte Mailadresse.
-- Help Widget: Icon wird nicht angezeigt, wenn „Hilfe-Anfragen (Kontakt-Widget)“ deaktiviert ist.
+- Settings: restructured tabs/content: moved “Display” into “General”, moved payroll mail fields into “Notifications”, and renamed “Attendance Security” to “Mobile Attendance Module”.
+- Settings: added “jump” buttons in each tab to scroll to cards; payroll mail text now shown in two columns (text left, preview right).
+- Help widget: changed icon to “?” (about 10px higher), panel shows short info text plus configured email address.
+- Help widget: icon is hidden when “Help Requests (Contact Widget)” is disabled.
 
 ## 1.3.1 - 2026-03-30
 
 ### Changed
-- Settings: Benachrichtigungen-Tab modernisiert (kategoriebezogene Karten); Aktivieren/Deaktivieren steht jetzt dort, wo auch Empfänger und Mailtexte gepflegt werden.
-- Settings: Lohnabrechnung (PDF per E-Mail) Toggle entfernt; Versand von Lohnabrechnungen ist nicht mehr über einen UI-Schalter deaktivierbar.
-- Settings: Live-Vorschau für Lohnabrechnung Mail-Templates ergänzt.
+- Settings: modernized notifications tab (category-based cards); enable/disable controls now live where recipients and mail texts are managed.
+- Settings: removed payroll (PDF via e-mail) toggle; payroll delivery can no longer be disabled via UI switch.
+- Settings: added live preview for payroll mail templates.
 
 ## 1.3.0 - 2026-03-29
 
 ### Added
 - Person picker: search matches Sportart taxonomy; selected persons show sport names in parentheses.
-- Add New User: optional Sportarten (checkboxes) applied to the created Mitglied post.
+- Add New User: optional sports categories (checkboxes) applied to the created member post.
 - Telefonbuch „Alle Daten“: Bank and IBAN columns for administrators only; Excel export includes them for administrators only.
-- Settings: per-category e-mail toggles (Lohnabrechnung, neues Mitglied, Training abgeschlossen, neues Event, Willkommens-Mail, Hilfe-Feld) with short descriptions; optional help recipient e-mail.
+- Settings: per-category email toggles (payroll, new member, training completed, new event, welcome mail, help field) with short descriptions; optional help recipient email.
 - Settings: Darstellung tab — Mediathek for login logo/background and public attendance logo/background (defaults unchanged when empty).
 - Public attendance: phone and e-mail icons next to names when data is present.
 - Floating help button (logged-in users) with subject/message and optional rate limit; uses Hilfe settings.
@@ -251,11 +251,11 @@ All notable changes to this plugin are documented in this file.
 ## 1.2.3 - 2026-03-17
 
 ### Added
-- Sportarten submenu under Trainings (admin-only) for managing sport taxonomy terms.
+- Sports submenu under Trainings (admin-only) for managing sport taxonomy terms.
 
 ### Changed
-- Buchhaltungsnummern moved from Einstellungen tab "Allgemein" to "Lohnabrechnung" as first item.
-- Sportarten submenu access restricted to Administrators (manage_options).
+- Accounting reference numbers moved from settings tab "General" to "Payroll" as the first item.
+- Sports submenu access restricted to Administrators (manage_options).
 
 ## 1.2.2 - 2026-03-17
 
@@ -332,7 +332,7 @@ All notable changes to this plugin are documented in this file.
 - Attendance auth cookie now uses secure options with `samesite=Strict`.
 - Attendance rate limit and cookie duration now read values from settings with safe defaults.
 - Payroll list rendering now avoids N+1 `get_post()` lookups.
-- Reworked plugin settings page into tabs for better usability (`Allgemein`, `Lohnabrechnung`, `Benachrichtigungen`, `Attendance Security`).
+- Reworked plugin settings page into tabs for better usability (`General`, `Payroll`, `Notifications`, `Attendance Security`).
 
 ### Fixed
 - Added file write error handling and debug logging for generated `.htaccess` files in:
