@@ -2,7 +2,7 @@
 /**
  * Plugin Name:     Special Olympics Extension
  * Description:     Erweiterung für Special Olympics, inkl. Trainingsverwaltung und Mitgliederverwaltung.
- * Version:         1.3.37
+ * Version:         1.3.84
  * Author:          Special Olympics Entwicklerteam
  */
 
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 /** Plugin version. */
-define( 'SOE_PLUGIN_VERSION', '1.3.37' );
+define( 'SOE_PLUGIN_VERSION', '1.3.84' );
 
 register_activation_hook( __FILE__, 'soe_plugin_activation' );
 function soe_plugin_activation() {
@@ -66,7 +66,6 @@ require_once __DIR__ . '/includes/post-type-training-register.php';
 require_once __DIR__ . '/includes/post-type-event-register.php';
 require_once __DIR__ . '/includes/taxonomy-sport.php';
 require_once __DIR__ . '/includes/taxonomy-event-type.php';
-require_once __DIR__ . '/includes/taxonomy-solie-status.php';
 require_once __DIR__ . '/includes/settings.php';
 require_once __DIR__ . '/includes/help-widget.php';
 require_once __DIR__ . '/includes/user-welcome-email.php';
@@ -77,6 +76,9 @@ require_once __DIR__ . '/includes/meine-athleten-page.php';
 require_once __DIR__ . '/includes/training-capabilities.php';
 require_once __DIR__ . '/includes/event-capabilities.php';
 require_once __DIR__ . '/includes/post-type-contact-register.php';
+require_once __DIR__ . '/includes/post-type-contact.php';
+require_once __DIR__ . '/includes/contact-archive.php';
+require_once __DIR__ . '/includes/taxonomy-contact-action-type.php';
 require_once __DIR__ . '/includes/ajax-person-search.php';
 require_once __DIR__ . '/includes/intranet-restrict.php';
 require_once __DIR__ . '/includes/login-customize.php';
@@ -94,4 +96,5 @@ if ( is_admin() ) {
 	require_once __DIR__ . '/includes/custom-payrolls.php';
 	require_once __DIR__ . '/includes/payroll.php';
 	require_once __DIR__ . '/includes/telefonbuch.php';
+	require_once __DIR__ . '/includes/contact-actions.php';
 }

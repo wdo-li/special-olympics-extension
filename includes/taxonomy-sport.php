@@ -14,6 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 add_action( 'init', 'soe_register_taxonomy_sport', 11 );
+add_action( 'admin_footer-post.php', 'soe_render_sport_box_hint' );
+add_action( 'admin_footer-post-new.php', 'soe_render_sport_box_hint' );
 
 /**
  * Registers the "sport" taxonomy for mitglied (and later training, event).
@@ -67,4 +69,40 @@ function soe_register_taxonomy_sport() {
 	);
 
 	register_taxonomy( 'sport', $post_types, $args );
+}
+
+/**
+ * Renders the hint directly inside the "Sportarten" meta box.
+ *
+ * @return void
+ */
+function soe_render_sport_box_hint() {
+	$screen = get_current_screen();
+	if ( ! $screen || $screen->base !== 'post' || ! in_array( $screen->post_type, array( 'mitglied', 'training', 'event' ), true ) ) {
+		return;
+	}
+
+	if ( ! taxonomy_exists( 'sport' ) ) {
+		return;
+	}
+
+	$message = __( 'Die Sportarten werden von der Geschäftsstelle gepflegt.', 'special-olympics-extension' );
+	?>
+	<script>
+	(function () {
+		var box = document.getElementById('sportdiv') || document.getElementById('tagsdiv-sport');
+		if (!box || box.querySelector('.soe-sport-hint')) {
+			return;
+		}
+		var inside = box.querySelector('.inside');
+		if (!inside) {
+			return;
+		}
+		var hint = document.createElement('p');
+		hint.className = 'description soe-sport-hint';
+		hint.textContent = <?php echo wp_json_encode( $message ); ?>;
+		inside.insertBefore(hint, inside.firstChild);
+	}());
+	</script>
+	<?php
 }

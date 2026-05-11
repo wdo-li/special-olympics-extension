@@ -342,6 +342,9 @@ function soe_attendance_validate_write_context( $training_id, $session_date, $pe
 	if ( ! soe_attendance_is_valid_ymd_date( $session_date ) || ! soe_attendance_is_valid_session_for_training( $training_id, $session_date ) ) {
 		return new WP_Error( 'invalid_session_date', __( 'Ungültiges Trainingsdatum.', 'special-olympics-extension' ) );
 	}
+	if ( function_exists( 'soe_db_training_is_session_cancelled' ) && soe_db_training_is_session_cancelled( $training_id, $session_date ) ) {
+		return new WP_Error( 'session_cancelled', __( 'Diese Session ist als abgesagt markiert. Anwesenheit kann nicht bearbeitet werden.', 'special-olympics-extension' ) );
+	}
 	if ( $person_id > 0 && ! soe_attendance_is_valid_person_for_training( $training_id, $person_id ) ) {
 		return new WP_Error( 'invalid_person', __( 'Ungültige Person für dieses Training.', 'special-olympics-extension' ) );
 	}
@@ -352,13 +355,29 @@ function soe_attendance_validate_write_context( $training_id, $session_date, $pe
 function soe_attendance_handle_save( $token, $mitglied_id ) {
 	$training_id = isset( $_POST['training_id'] ) ? (int) $_POST['training_id'] : 0;
 	$session_date = isset( $_POST['session_date'] ) ? sanitize_text_field( wp_unslash( $_POST['session_date'] ) ) : '';
+	$session_status = isset( $_POST['session_status'] ) ? sanitize_text_field( wp_unslash( $_POST['session_status'] ) ) : 'normal';
+	$session_status = function_exists( 'soe_db_training_normalize_session_status' )
+		? soe_db_training_normalize_session_status( $session_status )
+		: ( $session_status === 'cancelled' ? 'cancelled' : 'normal' );
 	if ( ! $training_id || ! soe_attendance_is_valid_ymd_date( $session_date ) ) {
 		return new WP_Error( 'invalid_operation', __( 'Ungültige Eingabedaten.', 'special-olympics-extension' ) );
 	}
 	$allowed = soe_attendance_get_allowed_training_ids( $mitglied_id );
+	if ( function_exists( 'soe_db_training_set_session_status' ) ) {
+		$status_saved = soe_db_training_set_session_status( $training_id, $session_date, $session_status, get_current_user_id() );
+		if ( ! $status_saved ) {
+			return new WP_Error( 'db_write_failed', __( 'Status konnte nicht gespeichert werden.', 'special-olympics-extension' ) );
+		}
+	}
+	if ( $session_status === 'cancelled' ) {
+		return true;
+	}
 	$context_valid = soe_attendance_validate_write_context( $training_id, $session_date, 0, $allowed );
 	if ( is_wp_error( $context_valid ) ) {
-		return $context_valid;
+		if ( $context_valid->get_error_code() !== 'session_cancelled' ) {
+			return $context_valid;
+		}
+		return true;
 	}
 	$attendances = isset( $_POST['attended'] ) && is_array( $_POST['attended'] ) ? $_POST['attended'] : array();
 	$person_ids = soe_attendance_get_training_person_ids( $training_id );
@@ -487,12 +506,27 @@ function soe_attendance_ajax_sync() {
 
 	foreach ( $operations as $op ) {
 		$op_id = isset( $op['opId'] ) ? sanitize_key( (string) $op['opId'] ) : '';
+		$op_type = isset( $op['opType'] ) ? sanitize_key( (string) $op['opType'] ) : 'attendance';
 		$training_id = isset( $op['trainingId'] ) ? (int) $op['trainingId'] : 0;
 		$session_date = isset( $op['sessionDate'] ) ? sanitize_text_field( (string) $op['sessionDate'] ) : '';
 		$person_id = isset( $op['personId'] ) ? (int) $op['personId'] : 0;
 		$attended = isset( $op['attended'] ) && (int) $op['attended'] === 1 ? 1 : 0;
+		$session_status = isset( $op['sessionStatus'] ) ? sanitize_text_field( (string) $op['sessionStatus'] ) : 'normal';
+		if ( function_exists( 'soe_db_training_normalize_session_status' ) ) {
+			$session_status = soe_db_training_normalize_session_status( $session_status );
+		} else {
+			$session_status = $session_status === 'cancelled' ? 'cancelled' : 'normal';
+		}
 
-		if ( $op_id === '' || ! $training_id || strlen( $session_date ) !== 10 || ! $person_id ) {
+		if ( $op_id === '' || ! $training_id || strlen( $session_date ) !== 10 ) {
+			$results[] = array(
+				'opId'    => $op_id,
+				'status'  => 'rejected',
+				'reason'  => 'invalid_operation',
+			);
+			continue;
+		}
+		if ( $op_type !== 'attendance' && $op_type !== 'session_status' ) {
 			$results[] = array(
 				'opId'    => $op_id,
 				'status'  => 'rejected',
@@ -510,18 +544,42 @@ function soe_attendance_ajax_sync() {
 			continue;
 		}
 
-		$context_valid = soe_attendance_validate_write_context( $training_id, $session_date, $person_id, $allowed_training_ids );
-		if ( is_wp_error( $context_valid ) ) {
-			$reason = $context_valid->get_error_code();
-			if ( ! in_array( $reason, array( 'invalid_training', 'forbidden_training', 'invalid_session_date', 'invalid_person' ), true ) ) {
-				$reason = 'invalid_operation';
-			}
+		if ( $op_type === 'attendance' && ! $person_id ) {
 			$results[] = array(
 				'opId'    => $op_id,
 				'status'  => 'rejected',
-				'reason'  => $reason,
+				'reason'  => 'invalid_operation',
 			);
 			continue;
+		}
+
+		if ( $op_type === 'session_status' && ! function_exists( 'soe_db_training_set_session_status' ) ) {
+			$results[] = array(
+				'opId'    => $op_id,
+				'status'  => 'rejected',
+				'reason'  => 'invalid_operation',
+			);
+			continue;
+		}
+
+		$context_person_id = $op_type === 'attendance' ? $person_id : 0;
+		$context_valid = soe_attendance_validate_write_context( $training_id, $session_date, $context_person_id, $allowed_training_ids );
+		if ( is_wp_error( $context_valid ) ) {
+			$reason = $context_valid->get_error_code();
+			if ( $reason === 'session_cancelled' && $op_type === 'session_status' ) {
+				$reason = '';
+			}
+			if ( $reason !== '' && ! in_array( $reason, array( 'invalid_training', 'forbidden_training', 'invalid_session_date', 'invalid_person', 'session_cancelled' ), true ) ) {
+				$reason = 'invalid_operation';
+			}
+			if ( $reason !== '' ) {
+				$results[] = array(
+					'opId'    => $op_id,
+					'status'  => 'rejected',
+					'reason'  => $reason,
+				);
+				continue;
+			}
 		}
 
 		if ( function_exists( 'soe_db_attendance_op_exists' ) && soe_db_attendance_op_exists( $op_id ) ) {
@@ -532,7 +590,11 @@ function soe_attendance_ajax_sync() {
 			continue;
 		}
 
-		$saved = soe_db_training_set_attendance( $training_id, $session_date, $person_id, $attended );
+		if ( $op_type === 'session_status' ) {
+			$saved = soe_db_training_set_session_status( $training_id, $session_date, $session_status, $user_id );
+		} else {
+			$saved = soe_db_training_set_attendance( $training_id, $session_date, $person_id, $attended );
+		}
 		if ( ! $saved ) {
 			$results[] = array(
 				'opId'   => $op_id,
@@ -543,7 +605,7 @@ function soe_attendance_ajax_sync() {
 		}
 
 		$marked = function_exists( 'soe_db_attendance_op_mark_processed' )
-			? soe_db_attendance_op_mark_processed( $op_id, $user_id, $training_id, $session_date, $person_id )
+			? soe_db_attendance_op_mark_processed( $op_id, $user_id, $training_id, $session_date, $context_person_id )
 			: true;
 		if ( ! $marked && function_exists( 'soe_db_attendance_op_exists' ) && soe_db_attendance_op_exists( $op_id ) ) {
 			$results[] = array(
@@ -958,6 +1020,7 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 	$sessions = array();
 	$persons = array();
 	$attendance = array();
+	$session_statuses = array();
 	$default_session = '';
 	$today = current_time( 'Y-m-d' );
 
@@ -965,6 +1028,7 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 		$sessions = soe_db_training_get_sessions( $selected_tid );
 		$persons = soe_attendance_get_person_labels( $selected_tid );
 		$attendance = soe_db_training_get_attendance( $selected_tid );
+		$session_statuses = function_exists( 'soe_db_training_get_session_statuses' ) ? soe_db_training_get_session_statuses( $selected_tid ) : array();
 		if ( ! empty( $sessions ) ) {
 			if ( in_array( $today, $sessions, true ) ) {
 				$default_session = $today;
@@ -987,6 +1051,8 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 		$session_param = $default_session;
 	}
 	$saved = isset( $_GET['saved'] ) && $_GET['saved'];
+	$current_session_status = ( $session_param && isset( $session_statuses[ $session_param ] ) ) ? $session_statuses[ $session_param ] : 'normal';
+	$is_session_cancelled = $current_session_status === 'cancelled';
 
 	$logo_url = function_exists( 'soe_get_attendance_public_logo_url' ) ? soe_get_attendance_public_logo_url() : '';
 	$body_bg_inline = 'background: #f5f5f5;';
@@ -1366,7 +1432,7 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 				$p_mail  = is_string( $p_mail ) ? trim( $p_mail ) : '';
 				?>
 				<div class="soe-person-row">
-					<input type="checkbox" name="attended[<?php echo (int) $person_id; ?>]" value="1" id="att-<?php echo (int) $person_id; ?>" <?php checked( $checked ); ?> />
+					<input type="checkbox" name="attended[<?php echo (int) $person_id; ?>]" value="1" id="att-<?php echo (int) $person_id; ?>" <?php checked( $checked ); ?> <?php disabled( $is_session_cancelled ); ?> />
 					<div class="soe-person-name-wrap">
 						<label for="att-<?php echo (int) $person_id; ?>">
 							<span class="soe-person-name-text"><?php echo esc_html( $label ); ?></span>
@@ -1387,6 +1453,14 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 					</div>
 				</div>
 			<?php endforeach; ?>
+			</div>
+			<div class="soe-form-group">
+				<label for="soe-session-status"><?php esc_html_e( 'Training durchgeführt', 'special-olympics-extension' ); ?></label>
+				<select id="soe-session-status" name="session_status">
+					<option value="normal" <?php selected( $current_session_status, 'normal' ); ?>><?php esc_html_e( 'Durchgeführt', 'special-olympics-extension' ); ?></option>
+					<option value="cancelled" <?php selected( $current_session_status, 'cancelled' ); ?>><?php esc_html_e( 'Abgesagt', 'special-olympics-extension' ); ?></option>
+				</select>
+				<p id="soe-session-status-note" class="soe-description" <?php echo $is_session_cancelled ? '' : 'style="display:none;"'; ?>><?php esc_html_e( 'Training ist abgesagt. Anwesenheiten können nicht bearbeitet werden.', 'special-olympics-extension' ); ?></p>
 			</div>
 
 			<button type="submit" id="soe-attendance-save"><?php esc_html_e( 'Speichern', 'special-olympics-extension' ); ?></button>
@@ -1535,6 +1609,7 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 				return "";
 			}
 			return [
+				op.opType || "attendance",
 				op.tokenHash || "",
 				op.trainingId || 0,
 				op.sessionDate || "",
@@ -1898,11 +1973,13 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 			payload.append("operations", JSON.stringify(ops.map(function(op) {
 				return {
 					opId: op.opId,
+					opType: op.opType || "attendance",
 					tokenHash: op.tokenHash,
 					trainingId: op.trainingId,
 					sessionDate: op.sessionDate,
 					personId: op.personId,
 					attended: op.attended,
+					sessionStatus: op.sessionStatus || "normal",
 					clientTimestamp: op.clientTimestamp
 				};
 			})));
@@ -2048,6 +2125,7 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 			}
 			return {
 				opId: generateOpId(),
+				opType: "attendance",
 				tokenHash: tokenHash,
 				trainingId: parseInt(trainingInput.value || "0", 10),
 				sessionDate: sessionInput.value || "",
@@ -2060,6 +2138,42 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 				createdAt: Date.now(),
 				updatedAt: Date.now()
 			};
+		}
+
+		function buildSessionStatusOperation(statusValue) {
+			var trainingInput = form.querySelector('input[name="training_id"]');
+			var sessionInput = form.querySelector("#soe-session");
+			if (!trainingInput || !sessionInput) {
+				return null;
+			}
+			var normalized = statusValue === "cancelled" ? "cancelled" : "normal";
+			return {
+				opId: generateOpId(),
+				opType: "session_status",
+				tokenHash: tokenHash,
+				trainingId: parseInt(trainingInput.value || "0", 10),
+				sessionDate: sessionInput.value || "",
+				personId: 0,
+				attended: 0,
+				sessionStatus: normalized,
+				clientTimestamp: new Date().toISOString(),
+				status: "pending",
+				retryCount: 0,
+				lastError: "",
+				createdAt: Date.now(),
+				updatedAt: Date.now()
+			};
+		}
+
+		function applyCancelledUiState(isCancelled) {
+			var checkboxes = form.querySelectorAll('.soe-person-list input[type="checkbox"][name^="attended["]');
+			checkboxes.forEach(function (cb) {
+				cb.disabled = !!isCancelled;
+			});
+			var note = document.getElementById("soe-session-status-note");
+			if (note) {
+				note.style.display = isCancelled ? "block" : "none";
+			}
 		}
 
 		function persistCheckboxChange(cb) {
@@ -2104,6 +2218,29 @@ function soe_attendance_render_page( $token, $mitglied_id ) {
 				persistCheckboxChange(cb);
 			});
 		});
+
+		var sessionStatusSelect = document.getElementById("soe-session-status");
+		if (sessionStatusSelect) {
+			sessionStatusSelect.addEventListener("change", function () {
+				var op = buildSessionStatusOperation(sessionStatusSelect.value);
+				if (!op) {
+					showError("Speichern fehlgeschlagen. Bitte Seite neu laden.");
+					return;
+				}
+				queueOperations([op])
+					.then(function () { return refreshMeta(); })
+					.then(function () { return syncQueue(); })
+					.then(function () { return refreshMeta(); })
+					.then(function () {
+						applyCancelledUiState(op.sessionStatus === "cancelled");
+					})
+					.catch(function () {
+						showError("Keine Verbindung zum Server. Änderungen bleiben lokal gespeichert.");
+						refreshMeta();
+					});
+			});
+			applyCancelledUiState(sessionStatusSelect.value === "cancelled");
+		}
 
 		if (syncNowButton) {
 			syncNowButton.addEventListener("click", function() {

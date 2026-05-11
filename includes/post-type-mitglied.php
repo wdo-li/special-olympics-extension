@@ -11,6 +11,8 @@
  */
 add_action( 'save_post_mitglied', 'soe_save_post_mitglied_account_data', 5, 2 );
 add_action( 'add_meta_boxes_mitglied', 'soe_mitglied_hide_events_and_sport_for_ansprechperson', 200, 1 );
+add_action( 'add_meta_boxes_mitglied', 'soe_mitglied_add_admin_linking_meta_box', 220, 1 );
+add_action( 'save_post_mitglied', 'soe_mitglied_save_admin_linking_meta_box', 20, 2 );
 function soe_save_post_mitglied_account_data( $post_id, $post ) {
 	static $running = false;
 	if ( $running ) {
@@ -83,6 +85,199 @@ function soe_save_post_mitglied_account_data( $post_id, $post ) {
 }
 
 /**
+ * Adds admin-only meta box for user linkage and creator controls.
+ *
+ * @param WP_Post $post Current mitglied post.
+ * @return void
+ */
+function soe_mitglied_add_admin_linking_meta_box( $post ) {
+	if ( ! $post || $post->post_type !== 'mitglied' ) {
+		return;
+	}
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	add_meta_box(
+		'soe_mitglied_admin_linking',
+		__( 'Verknüpfung und Ersteller', 'special-olympics-extension' ),
+		'soe_mitglied_render_admin_linking_meta_box',
+		'mitglied',
+		'normal',
+		'low'
+	);
+}
+
+/**
+ * Renders admin-only linkage/editorial controls for mitglied posts.
+ *
+ * @param WP_Post $post Current mitglied post.
+ * @return void
+ */
+function soe_mitglied_render_admin_linking_meta_box( $post ) {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	wp_nonce_field( 'soe_mitglied_admin_linking_save', 'soe_mitglied_admin_linking_nonce' );
+
+	$linked_user_id = (int) get_post_meta( $post->ID, 'user_id', true );
+	if ( ! $linked_user_id && function_exists( 'get_field' ) ) {
+		$linked_user_id = (int) get_field( 'user_id', $post->ID );
+	}
+	$creator_user_id = (int) $post->post_author;
+	$users = get_users(
+		array(
+			'fields'  => array( 'ID', 'display_name', 'user_login', 'user_email' ),
+			'orderby' => 'display_name',
+			'order'   => 'ASC',
+		)
+	);
+
+	$creator = $creator_user_id ? get_userdata( $creator_user_id ) : null;
+	$creator_label = $creator ? sprintf(
+		'%1$s (%2$s)',
+		$creator->display_name ?: $creator->user_login,
+		$creator->user_login
+	) : __( 'Unbekannt', 'special-olympics-extension' );
+	?>
+	<p class="description">
+		<?php
+		printf(
+			/* translators: %s: user label */
+			esc_html__( 'Aktuell angelegt von: %s', 'special-olympics-extension' ),
+			esc_html( $creator_label )
+		);
+		?>
+	</p>
+	<table class="form-table">
+		<tr>
+			<th scope="row"><label for="soe_mitglied_linked_user_id"><?php esc_html_e( 'Verknüpfter Benutzer (user_id)', 'special-olympics-extension' ); ?></label></th>
+			<td>
+				<select id="soe_mitglied_linked_user_id" name="soe_mitglied_linked_user_id">
+					<option value="0"><?php esc_html_e( 'Kein Benutzer verknuepft', 'special-olympics-extension' ); ?></option>
+					<?php foreach ( $users as $user ) : ?>
+						<option value="<?php echo (int) $user->ID; ?>" <?php selected( $linked_user_id, (int) $user->ID ); ?>>
+							<?php
+							echo esc_html(
+								sprintf(
+									'%1$s (%2$s) - %3$s',
+									$user->display_name ?: $user->user_login,
+									$user->user_login,
+									$user->user_email
+								)
+							);
+							?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="soe_mitglied_creator_user_id"><?php esc_html_e( 'Ersteller des Eintrags', 'special-olympics-extension' ); ?></label></th>
+			<td>
+				<select id="soe_mitglied_creator_user_id" name="soe_mitglied_creator_user_id">
+					<option value="0"><?php esc_html_e( 'Unveraendert lassen', 'special-olympics-extension' ); ?></option>
+					<?php foreach ( $users as $user ) : ?>
+						<option value="<?php echo (int) $user->ID; ?>" <?php selected( $creator_user_id, (int) $user->ID ); ?>>
+							<?php
+							echo esc_html(
+								sprintf(
+									'%1$s (%2$s) - %3$s',
+									$user->display_name ?: $user->user_login,
+									$user->user_login,
+									$user->user_email
+								)
+							);
+							?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+			</td>
+		</tr>
+	</table>
+	<?php
+}
+
+/**
+ * Saves admin-only linkage/editorial controls for mitglied posts.
+ *
+ * @param int     $post_id Post ID.
+ * @param WP_Post $post    Current post.
+ * @return void
+ */
+function soe_mitglied_save_admin_linking_meta_box( $post_id, $post ) {
+	static $running = false;
+	if ( $running ) {
+		return;
+	}
+	if ( ! $post || $post->post_type !== 'mitglied' ) {
+		return;
+	}
+	if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+		return;
+	}
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( ! isset( $_POST['soe_mitglied_admin_linking_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['soe_mitglied_admin_linking_nonce'] ) ), 'soe_mitglied_admin_linking_save' ) ) {
+		return;
+	}
+
+	$linked_user_id = isset( $_POST['soe_mitglied_linked_user_id'] ) ? (int) $_POST['soe_mitglied_linked_user_id'] : 0;
+	$creator_user_id = isset( $_POST['soe_mitglied_creator_user_id'] ) ? (int) $_POST['soe_mitglied_creator_user_id'] : 0;
+	$creator_changed = false;
+
+	if ( $linked_user_id > 0 ) {
+		$user = get_userdata( $linked_user_id );
+		if ( $user ) {
+			update_post_meta( $post_id, 'user_id', $linked_user_id );
+		}
+	} else {
+		delete_post_meta( $post_id, 'user_id' );
+	}
+
+	if ( $creator_user_id > 0 && (int) $post->post_author !== $creator_user_id && get_userdata( $creator_user_id ) ) {
+		$running = true;
+		wp_update_post(
+			array(
+				'ID'          => (int) $post_id,
+				'post_author' => $creator_user_id,
+			)
+		);
+		$running = false;
+		$creator_changed = true;
+	}
+
+	// When admin changes the creator, update Notfallkontakt reference for member records without linked user_id.
+	if ( $creator_changed ) {
+		$current_linked_user_id = (int) get_post_meta( $post_id, 'user_id', true );
+		if ( $current_linked_user_id === 0 ) {
+			$creator_mitglied_posts = get_posts(
+				array(
+					'post_type'      => 'mitglied',
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'fields'         => 'ids',
+					'meta_key'       => 'user_id',
+					'meta_value'     => $creator_user_id,
+					'orderby'        => 'date',
+					'order'          => 'ASC',
+				)
+			);
+			$creator_mitglied_id = empty( $creator_mitglied_posts ) ? 0 : (int) $creator_mitglied_posts[0];
+			$notfall_ref_meta_key = defined( 'SOE_NOTFALLKONTAKT_PERSON_ID_META' ) ? SOE_NOTFALLKONTAKT_PERSON_ID_META : 'notfallkontakt_person_id';
+
+			if ( $creator_mitglied_id > 0 ) {
+				update_post_meta( $post_id, $notfall_ref_meta_key, $creator_mitglied_id );
+			} else {
+				delete_post_meta( $post_id, $notfall_ref_meta_key );
+			}
+		}
+	}
+}
+
+/**
  * Returns normalized role slugs from ACF field "role" for a mitglied post.
  *
  * @param int $post_id Mitglied post ID.
@@ -127,9 +322,24 @@ function soe_mitglied_is_pure_ansprechperson_role_set( $roles ) {
 }
 
 /**
- * Hides Events and Sportarten boxes for "Ansprechperson" member records.
+ * Returns true when the current user has role "ansprechperson".
  *
- * These members do not participate in events and should not be assigned sports.
+ * Uses WP user roles (not the role field of the edited target member).
+ * Additional roles (e.g. leiter_in/hauptleiter_in) are allowed.
+ *
+ * @return bool
+ */
+function soe_current_user_has_ansprechperson_role() {
+	$user = wp_get_current_user();
+	if ( ! $user || empty( $user->ID ) ) {
+		return false;
+	}
+	$roles = isset( $user->roles ) && is_array( $user->roles ) ? $user->roles : array();
+	return soe_mitglied_has_ansprechperson_role( $roles );
+}
+
+/**
+ * Hides Sportarten box for users outside allowed editor roles.
  *
  * @param WP_Post $post Current mitglied post.
  * @return void
@@ -138,13 +348,15 @@ function soe_mitglied_hide_events_and_sport_for_ansprechperson( $post ) {
 	if ( ! $post || $post->post_type !== 'mitglied' ) {
 		return;
 	}
-	$roles = soe_mitglied_get_role_slugs( $post->ID );
-	if ( ! soe_mitglied_is_pure_ansprechperson_role_set( $roles ) ) {
+
+	$user = wp_get_current_user();
+	$current_roles = ( $user && is_array( $user->roles ) ) ? $user->roles : array();
+	$can_see_sport = current_user_can( 'manage_options' )
+		|| in_array( 'hauptleiter_in', $current_roles, true )
+		|| in_array( 'leiter_in', $current_roles, true );
+	if ( $can_see_sport ) {
 		return;
 	}
-
-	// Events meta box from custom-events.php.
-	remove_meta_box( 'soe_mitglied_events', 'mitglied', 'normal' );
 
 	// Taxonomy boxes for "sport" (hierarchical/non-hierarchical variants).
 	remove_meta_box( 'sportdiv', 'mitglied', 'side' );
@@ -476,7 +688,11 @@ function soe_mitglied_get_role_display( $post_id ) {
  */
 add_filter( 'manage_mitglied_posts_columns', 'soe_mitglied_list_add_role_column' );
 function soe_mitglied_list_add_role_column( $columns ) {
-	$insert = array( 'soe_role' => __( 'Funktion', 'special-olympics-extension' ) );
+	$insert = array(
+		'soe_role'  => __( 'Funktion', 'special-olympics-extension' ),
+		'soe_phone' => __( 'Telefon', 'special-olympics-extension' ),
+		'soe_email' => __( 'E-Mail', 'special-olympics-extension' ),
+	);
 	$pos    = array_search( 'title', array_keys( $columns ), true );
 	if ( $pos !== false ) {
 		$columns = array_slice( $columns, 0, $pos + 1, true ) + $insert + array_slice( $columns, $pos + 1, null, true );
@@ -490,6 +706,17 @@ add_action( 'manage_mitglied_posts_custom_column', 'soe_mitglied_list_render_rol
 function soe_mitglied_list_render_role_column( $column, $post_id ) {
 	if ( $column === 'soe_role' ) {
 		echo esc_html( soe_mitglied_get_role_display( $post_id ) );
+		return;
+	}
+	if ( $column === 'soe_phone' ) {
+		$phone = function_exists( 'get_field' ) ? get_field( 'telefonnummer', $post_id ) : '';
+		echo esc_html( is_string( $phone ) && trim( $phone ) !== '' ? trim( $phone ) : '–' );
+		return;
+	}
+	if ( $column === 'soe_email' ) {
+		$email = function_exists( 'get_field' ) ? get_field( 'e-mail', $post_id ) : '';
+		$email = is_string( $email ) ? trim( $email ) : '';
+		echo esc_html( $email !== '' ? $email : '–' );
 	}
 }
 
@@ -887,9 +1114,8 @@ function soe_set_notfallkontakt_reference_on_create( $post_id ) {
 		return;
 	}
 
-	// Only for pure Ansprechpersonen (without Leiter/Hauptleiter role).
-	$current_roles = soe_mitglied_get_role_slugs( $post_id );
-	if ( ! soe_mitglied_is_pure_ansprechperson_role_set( $current_roles ) ) {
+	// Only for users with role ansprechperson (additional roles are allowed).
+	if ( ! soe_current_user_has_ansprechperson_role() ) {
 		return;
 	}
 
@@ -937,11 +1163,10 @@ function soe_load_notfallkontakt_name( $value, $post_id, $field ) {
 
 	// If no reference yet, check if we should pre-fill for Ansprechperson (new post)
 	if ( ! $ref_id ) {
-		$roles = soe_mitglied_get_role_slugs( $post_id );
-		$is_pure_ansprechperson = soe_mitglied_is_pure_ansprechperson_role_set( $roles );
+		$has_ansprechperson_role = soe_current_user_has_ansprechperson_role();
 
-		// Only pre-fill if: pure Ansprechperson AND user_id field is empty (not own profile)
-		if ( $is_pure_ansprechperson ) {
+		// Only pre-fill if: user has ansprechperson role AND user_id field is empty (not own profile)
+		if ( $has_ansprechperson_role ) {
 			$user_id_field = get_field( 'user_id', $post_id );
 			if ( empty( $user_id_field ) && function_exists( 'soe_get_current_user_mitglied_id' ) ) {
 				$ref_id = soe_get_current_user_mitglied_id();
@@ -989,11 +1214,10 @@ function soe_load_notfallkontakt_telefon( $value, $post_id, $field ) {
 
 	// If no reference yet, check if we should pre-fill for Ansprechperson (new post)
 	if ( ! $ref_id ) {
-		$roles = soe_mitglied_get_role_slugs( $post_id );
-		$is_pure_ansprechperson = soe_mitglied_is_pure_ansprechperson_role_set( $roles );
+		$has_ansprechperson_role = soe_current_user_has_ansprechperson_role();
 
-		// Only pre-fill if: pure Ansprechperson AND user_id field is empty (not own profile)
-		if ( $is_pure_ansprechperson ) {
+		// Only pre-fill if: user has ansprechperson role AND user_id field is empty (not own profile)
+		if ( $has_ansprechperson_role ) {
 			$user_id_field = get_field( 'user_id', $post_id );
 			if ( empty( $user_id_field ) && function_exists( 'soe_get_current_user_mitglied_id' ) ) {
 				$ref_id = soe_get_current_user_mitglied_id();
@@ -1038,8 +1262,7 @@ function soe_notfallkontakt_field_readonly( $field ) {
 	// For new posts (auto-draft), check role set from the current mitglied record.
 	$current_user_id = get_current_user_id();
 	$is_admin = current_user_can( 'manage_options' );
-	$roles = $post_id ? soe_mitglied_get_role_slugs( $post_id ) : array();
-	$is_pure_ansprechperson = soe_mitglied_is_pure_ansprechperson_role_set( $roles );
+	$has_ansprechperson_role = soe_current_user_has_ansprechperson_role();
 
 	// Check if this post has a notfallkontakt reference (created by Ansprechperson)
 	$has_reference = false;
@@ -1062,8 +1285,8 @@ function soe_notfallkontakt_field_readonly( $field ) {
 		return $field;
 	}
 
-	// For pure Ansprechpersonen: make fields read-only (for new posts)
-	if ( $is_pure_ansprechperson ) {
+	// For users with role ansprechperson: make fields read-only (for new posts)
+	if ( $has_ansprechperson_role ) {
 		// Check if this post has user_id (own profile) - allow editing own profile
 		if ( $post_id ) {
 			$user_id_field = get_field( 'user_id', $post_id );

@@ -59,7 +59,7 @@ function soe_register_post_type_contact() {
 		'hierarchical'        => false,
 		'menu_position'       => null,
 		'menu_icon'            => 'dashicons-id-alt',
-		'supports'            => array( 'title', 'editor', 'custom-fields' ),
+		'supports'            => array( 'title', 'custom-fields' ),
 		'show_in_rest'        => false,
 	);
 

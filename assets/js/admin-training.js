@@ -27,6 +27,89 @@
 			$('.soe-attendance-for-date').hide().filter('[data-date="' + val + '"]').show();
 		});
 
+		function getSelectedSessionStatus() {
+			var $date = $('#soe-session-status-date');
+			if (!$date.length) {
+				return 'normal';
+			}
+			var selected = $date.find('option:selected').data('status');
+			return selected === 'cancelled' ? 'cancelled' : 'normal';
+		}
+
+		function applyCancelledStateForSelectedSession() {
+			var $date = $('#soe-session-status-date');
+			if (!$date.length) {
+				return;
+			}
+			var sessionDate = $date.val();
+			var isCancelled = getSelectedSessionStatus() === 'cancelled';
+			var $rows = $('.soe-attendance-cb[data-session="' + sessionDate + '"]');
+			$rows.prop('disabled', isCancelled);
+			var $msg = $('.soe-attendance-msg');
+			if (isCancelled) {
+				$msg.removeClass('updated').addClass('error').text('Dieses Training ist abgesagt. Anwesenheit ist gesperrt.').show();
+			} else if ($msg.hasClass('error') && $msg.text().indexOf('abgesagt') >= 0) {
+				$msg.hide().text('');
+			}
+		}
+
+		function applyCancelledStateForAllSessions() {
+			var $date = $('#soe-session-status-date');
+			if (!$date.length) {
+				return;
+			}
+			$date.find('option').each(function () {
+				var dateValue = $(this).val();
+				var status = $(this).data('status') === 'cancelled' ? 'cancelled' : 'normal';
+				$('.soe-attendance-cb[data-session="' + dateValue + '"]').prop('disabled', status === 'cancelled');
+			});
+		}
+
+		$(document).on('change', '#soe-session-status-date', function () {
+			var status = getSelectedSessionStatus();
+			$('#soe-session-status-value').val(status);
+			// Keep mobile date switch in sync.
+			$('.soe-attendance-date-select').val($(this).val()).trigger('change');
+			applyCancelledStateForSelectedSession();
+		});
+
+		$(document).on('click', '.soe-session-status-save', function () {
+			var $btn = $(this);
+			var trainingId = $btn.data('post-id');
+			var nonce = $btn.data('nonce');
+			var $date = $('#soe-session-status-date');
+			var $status = $('#soe-session-status-value');
+			var $msg = $('.soe-session-status-msg');
+			if (!$date.length || !$status.length || !trainingId || !nonce) {
+				return;
+			}
+			$btn.prop('disabled', true);
+			$msg.hide();
+			$.post(soeTrainingAdmin.ajaxUrl, {
+				action: 'soe_training_set_session_status',
+				training_id: trainingId,
+				session_date: $date.val(),
+				status: $status.val(),
+				nonce: nonce
+			})
+				.done(function (r) {
+					if (r.success && r.data) {
+						$date.find('option:selected').attr('data-status', r.data.status).data('status', r.data.status);
+						$msg.removeClass('error').addClass('updated').text(r.data.message || soeTrainingAdmin.i18n.saved).show();
+						applyCancelledStateForAllSessions();
+						applyCancelledStateForSelectedSession();
+					} else {
+						$msg.removeClass('updated').addClass('error').text(r.data && r.data.message ? r.data.message : soeTrainingAdmin.i18n.error).show();
+					}
+				})
+				.fail(function () {
+					$msg.removeClass('updated').addClass('error').text(soeTrainingAdmin.i18n.error).show();
+				})
+				.always(function () {
+					$btn.prop('disabled', false);
+				});
+		});
+
 		// Attendance checkbox: save on change (spinner per cell; prevent parallel toggles on same box)
 		$(document).on('change', '.soe-attendance-cb', function () {
 			var $cb = $(this);
@@ -311,5 +394,12 @@
 					$btn.prop('disabled', false);
 				});
 		});
+
+		// Initial sync for session status controls.
+		if ($('#soe-session-status-date').length) {
+			$('#soe-session-status-value').val(getSelectedSessionStatus());
+			applyCancelledStateForAllSessions();
+			applyCancelledStateForSelectedSession();
+		}
 	});
 })(jQuery);

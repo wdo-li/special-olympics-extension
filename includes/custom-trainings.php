@@ -19,6 +19,7 @@ add_action( 'admin_init', function () {
 }, 5 );
 add_action( 'admin_enqueue_scripts', 'soe_custom_trainings_scripts' );
 add_action( 'wp_ajax_soe_training_attendance', 'soe_ajax_training_attendance' );
+add_action( 'wp_ajax_soe_training_set_session_status', 'soe_ajax_training_set_session_status' );
 add_action( 'wp_ajax_soe_training_mark_completed', 'soe_ajax_training_mark_completed' );
 add_action( 'wp_ajax_soe_training_request_completed', 'soe_ajax_training_request_completed' );
 add_action( 'wp_ajax_soe_training_mark_running', 'soe_ajax_training_mark_running' );
@@ -402,6 +403,7 @@ function soe_render_training_form() {
 	$training = $is_edit ? soe_db_training_get( $id ) : array();
 	$persons = $is_edit ? soe_db_training_get_persons( $id ) : array();
 	$sessions = $is_edit ? soe_db_training_get_sessions( $id ) : array();
+	$session_statuses = ( $is_edit && function_exists( 'soe_db_training_get_session_statuses' ) ) ? soe_db_training_get_session_statuses( $id ) : array();
 	$computed_sessions = $is_edit ? soe_training_compute_sessions_from_row( array( 'start_date' => $training['start_date'] ?? '', 'end_date' => $training['end_date'] ?? '', 'weekdays' => $training['weekdays'] ?? '', 'excluded_dates' => $training['excluded_dates'] ?? '' ) ) : array();
 	$attendance = $is_edit ? soe_db_training_get_attendance( $id ) : array();
 	$all_persons = soe_training_get_all_person_labels( $id );
@@ -464,6 +466,31 @@ function soe_render_training_form() {
 									<p>
 										<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'soe_export_training_attendance', 'id' => $id ), admin_url( 'admin-post.php' ) ), 'soe_export_training_attendance' ) ); ?>" class="button"><?php esc_html_e( 'Als Excel exportieren', 'special-olympics-extension' ); ?></a>
 									</p>
+								<?php endif; ?>
+								<?php if ( $can_edit_attendance ) : ?>
+									<p class="soe-session-status-control" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+										<label for="soe-session-status-date"><strong><?php esc_html_e( 'Training durchgeführt', 'special-olympics-extension' ); ?></strong></label>
+										<select id="soe-session-status-date" class="soe-session-status-date">
+											<?php foreach ( $sessions as $d ) : ?>
+												<option value="<?php echo esc_attr( $d ); ?>" data-status="<?php echo esc_attr( $session_statuses[ $d ] ?? 'normal' ); ?>" <?php selected( $d, $default_session ); ?>>
+													<?php echo esc_html( date_i18n( 'l, d.m.Y', strtotime( $d ) ) ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+										<select id="soe-session-status-value" class="soe-session-status-value">
+											<option value="normal"><?php esc_html_e( 'Durchgeführt', 'special-olympics-extension' ); ?></option>
+											<option value="cancelled"><?php esc_html_e( 'Abgesagt', 'special-olympics-extension' ); ?></option>
+										</select>
+										<button
+											type="button"
+											class="button soe-session-status-save"
+											data-post-id="<?php echo (int) $id; ?>"
+											data-nonce="<?php echo esc_attr( wp_create_nonce( 'soe_training_session_status_' . $id ) ); ?>"
+										>
+											<?php esc_html_e( 'Speichern', 'special-olympics-extension' ); ?>
+										</button>
+									</p>
+									<p class="soe-session-status-msg" style="display:none;"></p>
 								<?php endif; ?>
 								<!-- Desktop: wide table (all dates as columns); hidden on tablet/small -->
 								<div class="soe-attendance-desktop">
@@ -808,15 +835,24 @@ function soe_training_compute_sessions_from_row( $row ) {
  * Renders attendance statistics table for a single training.
  */
 function soe_render_training_stats_table( $training_id, $sessions, $attendance, $all_persons ) {
-	$total = count( $sessions );
+	$statuses = function_exists( 'soe_db_training_get_session_statuses' ) ? soe_db_training_get_session_statuses( $training_id ) : array();
+	$active_sessions = array_values(
+		array_filter(
+			(array) $sessions,
+			function ( $d ) use ( $statuses ) {
+				return ( $statuses[ $d ] ?? 'normal' ) !== 'cancelled';
+			}
+		)
+	);
+	$total = count( $active_sessions );
 	if ( $total === 0 ) {
-		echo '<p>' . esc_html__( 'Keine Sessions.', 'special-olympics-extension' ) . '</p>';
+		echo '<p>' . esc_html__( 'Keine auswertbaren Sessions (alle abgesagt oder keine Termine).', 'special-olympics-extension' ) . '</p>';
 		return;
 	}
 	echo '<table class="widefat striped"><thead><tr><th>' . esc_html__( 'Name', 'special-olympics-extension' ) . '</th><th>' . esc_html__( 'Anw.', 'special-olympics-extension' ) . '</th><th>' . esc_html__( 'Anw. %', 'special-olympics-extension' ) . '</th></tr></thead><tbody>';
 	foreach ( $all_persons as $pid => $label ) {
 		$count = 0;
-		foreach ( $sessions as $d ) {
+		foreach ( $active_sessions as $d ) {
 			if ( ! empty( $attendance[ $d ][ $pid ] ) ) {
 				$count++;
 			}
@@ -963,11 +999,56 @@ function soe_ajax_training_attendance() {
 			wp_send_json_error( array( 'message' => $context_valid->get_error_message() ) );
 		}
 	}
+	if ( function_exists( 'soe_db_training_is_session_cancelled' ) && soe_db_training_is_session_cancelled( $post_id, $session ) ) {
+		wp_send_json_error( array( 'message' => __( 'Diese Session ist als abgesagt markiert. Anwesenheit kann nicht bearbeitet werden.', 'special-olympics-extension' ) ) );
+	}
 	$saved = soe_db_training_set_attendance( $post_id, $session, $person_id, $checked ? 1 : 0 );
 	if ( ! $saved ) {
 		wp_send_json_error( array( 'message' => __( 'Fehler beim Speichern.', 'special-olympics-extension' ) ) );
 	}
 	wp_send_json_success( array( 'message' => __( 'Gespeichert.', 'special-olympics-extension' ) ) );
+}
+
+/**
+ * AJAX: Set session status (normal/cancelled) for one training session.
+ */
+function soe_ajax_training_set_session_status() {
+	$training_id = isset( $_POST['training_id'] ) ? (int) $_POST['training_id'] : 0;
+	$session_date = isset( $_POST['session_date'] ) ? sanitize_text_field( wp_unslash( $_POST['session_date'] ) ) : '';
+	$status = isset( $_POST['status'] ) ? sanitize_text_field( wp_unslash( $_POST['status'] ) ) : 'normal';
+	if ( ! $training_id || strlen( $session_date ) !== 10 ) {
+		wp_send_json_error( array( 'message' => __( 'Ungültige Anfrage.', 'special-olympics-extension' ) ) );
+	}
+	check_ajax_referer( 'soe_training_session_status_' . $training_id, 'nonce' );
+	if ( ! current_user_can( 'edit_trainings' ) ) {
+		wp_send_json_error( array( 'message' => __( 'Keine Berechtigung.', 'special-olympics-extension' ) ) );
+	}
+	if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! function_exists( 'soe_is_current_user_assigned_to_training' ) || ! soe_is_current_user_assigned_to_training( $training_id, array( 'hauptleiter', 'leiter' ) ) ) {
+			wp_send_json_error( array( 'message' => __( 'Keine Berechtigung für dieses Training.', 'special-olympics-extension' ) ) );
+		}
+	}
+	$training = soe_db_training_get( $training_id );
+	if ( ! $training || ! empty( $training['completed'] ) ) {
+		wp_send_json_error( array( 'message' => __( 'Training abgeschlossen.', 'special-olympics-extension' ) ) );
+	}
+	if ( function_exists( 'soe_attendance_is_valid_session_for_training' ) && ! soe_attendance_is_valid_session_for_training( $training_id, $session_date ) ) {
+		wp_send_json_error( array( 'message' => __( 'Ungültiges Trainingsdatum.', 'special-olympics-extension' ) ) );
+	}
+	if ( ! function_exists( 'soe_db_training_set_session_status' ) ) {
+		wp_send_json_error( array( 'message' => __( 'Funktion nicht verfügbar.', 'special-olympics-extension' ) ) );
+	}
+	$status = function_exists( 'soe_db_training_normalize_session_status' ) ? soe_db_training_normalize_session_status( $status ) : ( $status === 'cancelled' ? 'cancelled' : 'normal' );
+	$saved = soe_db_training_set_session_status( $training_id, $session_date, $status, get_current_user_id() );
+	if ( ! $saved ) {
+		wp_send_json_error( array( 'message' => __( 'Status konnte nicht gespeichert werden.', 'special-olympics-extension' ) ) );
+	}
+	wp_send_json_success(
+		array(
+			'message' => __( 'Status gespeichert.', 'special-olympics-extension' ),
+			'status'  => $status,
+		)
+	);
 }
 
 function soe_ajax_training_mark_completed() {

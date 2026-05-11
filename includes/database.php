@@ -19,6 +19,8 @@ define( 'SOE_TABLE_TRAINING_PERSONS', 'soe_training_persons' );
 define( 'SOE_TABLE_TRAINING_SESSIONS', 'soe_training_sessions' );
 /** Training attendance table. */
 define( 'SOE_TABLE_TRAINING_ATTENDANCE', 'soe_training_attendance' );
+/** Training session status table (normal/cancelled). */
+define( 'SOE_TABLE_TRAINING_SESSION_STATUS', 'soe_training_session_status' );
 /** Main events table (replaces CPT). */
 define( 'SOE_TABLE_EVENTS', 'soe_events' );
 /** Event persons (role assignments). */
@@ -32,8 +34,17 @@ define( 'SOE_TABLE_PAYROLL_ADJUSTMENTS', 'soe_payroll_manual_adjustments' );
 /** Attendance sync operation log for idempotency (offline sync). */
 define( 'SOE_TABLE_ATTENDANCE_OPS', 'soe_attendance_ops' );
 
+/** Contact action templates. */
+define( 'SOE_TABLE_CONTACT_ACTIONS', 'soe_contact_actions' );
+/** Fields (columns/checkboxes) per contact action. */
+define( 'SOE_TABLE_CONTACT_ACTION_FIELDS', 'soe_contact_action_fields' );
+/** Contact participation items per contact action. */
+define( 'SOE_TABLE_CONTACT_ACTION_ITEMS', 'soe_contact_action_items' );
+/** Checkbox/field values per item. */
+define( 'SOE_TABLE_CONTACT_ACTION_ITEM_VALUES', 'soe_contact_action_item_values' );
+
 /** Database version for schema updates. */
-define( 'SOE_DB_VERSION', 12 );
+define( 'SOE_DB_VERSION', 16 );
 
 add_action( 'plugins_loaded', 'soe_maybe_create_tables', 5 );
 
@@ -61,7 +72,214 @@ function soe_maybe_create_tables() {
 	if ( $installed > 0 && $installed < 12 ) {
 		soe_db_upgrade_to_12();
 	}
+	if ( $installed > 0 && $installed < 13 ) {
+		soe_db_upgrade_to_13();
+	}
+	if ( $installed > 0 && $installed < 14 ) {
+		soe_db_upgrade_to_14();
+	}
+	if ( $installed > 0 && $installed < 15 ) {
+		soe_db_upgrade_to_15();
+	}
+	if ( $installed > 0 && $installed < 16 ) {
+		soe_db_upgrade_to_16();
+	}
 	update_option( 'soe_db_version', SOE_DB_VERSION );
+}
+
+/**
+ * Widens action_type column for taxonomy slugs; default status active (v15 → v16).
+ */
+function soe_db_upgrade_to_16() {
+	global $wpdb;
+	$table = $wpdb->prefix . SOE_TABLE_CONTACT_ACTIONS;
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is from constant prefix.
+	$wpdb->query( "ALTER TABLE $table MODIFY action_type varchar(200) NOT NULL DEFAULT ''" );
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$wpdb->query( "ALTER TABLE $table MODIFY status varchar(50) NOT NULL DEFAULT 'active'" );
+}
+
+/**
+ * Extends soe_contact_actions with workflow fields and adds performance indexes (v14 → v15).
+ */
+function soe_db_upgrade_to_15() {
+	global $wpdb;
+	$charset = $wpdb->get_charset_collate();
+
+	// Re-run dbDelta on updated soe_contact_actions schema to add new columns.
+	$actions = $wpdb->prefix . SOE_TABLE_CONTACT_ACTIONS;
+	$sql_actions = "CREATE TABLE $actions (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		title varchar(255) NOT NULL DEFAULT '',
+		description text,
+		action_type varchar(50) NOT NULL DEFAULT '',
+		action_year smallint(5) unsigned DEFAULT NULL,
+		event_label varchar(255) NOT NULL DEFAULT '',
+		status varchar(50) NOT NULL DEFAULT 'draft',
+		due_date date DEFAULT NULL,
+		responsible_user_id bigint(20) unsigned DEFAULT NULL,
+		created_by bigint(20) unsigned NOT NULL DEFAULT 0,
+		is_active tinyint(1) NOT NULL DEFAULT 1,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		KEY is_active (is_active),
+		KEY created_by (created_by),
+		KEY action_type (action_type),
+		KEY action_year (action_year),
+		KEY action_status (status)
+	) $charset;";
+
+	// Re-run dbDelta on items with additional composite index.
+	$items = $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_ITEMS;
+	$sql_items = "CREATE TABLE $items (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		action_id bigint(20) unsigned NOT NULL,
+		contact_id bigint(20) unsigned NOT NULL,
+		status varchar(50) NOT NULL DEFAULT 'open',
+		note text,
+		is_active tinyint(1) NOT NULL DEFAULT 1,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY action_contact (action_id, contact_id),
+		KEY action_id (action_id),
+		KEY contact_id (contact_id),
+		KEY is_active (is_active),
+		KEY action_status_active (action_id, status, is_active),
+		KEY contact_active (contact_id, is_active)
+	) $charset;";
+
+	// Re-run dbDelta on item_values with composite filter index.
+	$item_values = $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_ITEM_VALUES;
+	$sql_item_values = "CREATE TABLE $item_values (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		item_id bigint(20) unsigned NOT NULL,
+		field_id bigint(20) unsigned NOT NULL,
+		value varchar(255) NOT NULL DEFAULT '',
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY item_field (item_id, field_id),
+		KEY item_id (item_id),
+		KEY field_id (field_id),
+		KEY field_value (field_id, value(20))
+	) $charset;";
+
+	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+	dbDelta( $sql_actions );
+	dbDelta( $sql_items );
+	dbDelta( $sql_item_values );
+}
+
+/**
+ * Creates contact action tables (v13 → v14).
+ */
+function soe_db_upgrade_to_14() {
+	global $wpdb;
+	$charset = $wpdb->get_charset_collate();
+
+	$actions     = $wpdb->prefix . SOE_TABLE_CONTACT_ACTIONS;
+	$fields      = $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_FIELDS;
+	$items       = $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_ITEMS;
+	$item_values = $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_ITEM_VALUES;
+
+	$sql_actions = "CREATE TABLE $actions (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		title varchar(255) NOT NULL DEFAULT '',
+		description text,
+		action_type varchar(50) NOT NULL DEFAULT '',
+		action_year smallint(5) unsigned DEFAULT NULL,
+		event_label varchar(255) NOT NULL DEFAULT '',
+		status varchar(50) NOT NULL DEFAULT 'draft',
+		due_date date DEFAULT NULL,
+		responsible_user_id bigint(20) unsigned DEFAULT NULL,
+		created_by bigint(20) unsigned NOT NULL DEFAULT 0,
+		is_active tinyint(1) NOT NULL DEFAULT 1,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		KEY is_active (is_active),
+		KEY created_by (created_by),
+		KEY action_type (action_type),
+		KEY action_year (action_year),
+		KEY action_status (status)
+	) $charset;";
+
+	$sql_fields = "CREATE TABLE $fields (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		action_id bigint(20) unsigned NOT NULL,
+		field_key varchar(100) NOT NULL DEFAULT '',
+		field_label varchar(255) NOT NULL DEFAULT '',
+		field_type varchar(50) NOT NULL DEFAULT 'checkbox',
+		sort_order int(11) NOT NULL DEFAULT 0,
+		is_active tinyint(1) NOT NULL DEFAULT 1,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY action_field_key (action_id, field_key),
+		KEY action_id (action_id),
+		KEY is_active (is_active)
+	) $charset;";
+
+	$sql_items = "CREATE TABLE $items (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		action_id bigint(20) unsigned NOT NULL,
+		contact_id bigint(20) unsigned NOT NULL,
+		status varchar(50) NOT NULL DEFAULT 'open',
+		note text,
+		is_active tinyint(1) NOT NULL DEFAULT 1,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY action_contact (action_id, contact_id),
+		KEY action_id (action_id),
+		KEY contact_id (contact_id),
+		KEY is_active (is_active),
+		KEY action_status_active (action_id, status, is_active),
+		KEY contact_active (contact_id, is_active)
+	) $charset;";
+
+	$sql_item_values = "CREATE TABLE $item_values (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		item_id bigint(20) unsigned NOT NULL,
+		field_id bigint(20) unsigned NOT NULL,
+		value varchar(255) NOT NULL DEFAULT '',
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY item_field (item_id, field_id),
+		KEY item_id (item_id),
+		KEY field_id (field_id),
+		KEY field_value (field_id, value(20))
+	) $charset;";
+
+	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+	dbDelta( $sql_actions );
+	dbDelta( $sql_fields );
+	dbDelta( $sql_items );
+	dbDelta( $sql_item_values );
+}
+
+/**
+ * Creates training session status table (normal/cancelled).
+ */
+function soe_db_upgrade_to_13() {
+	global $wpdb;
+	$charset = $wpdb->get_charset_collate();
+	$table = $wpdb->prefix . SOE_TABLE_TRAINING_SESSION_STATUS;
+	$sql = "CREATE TABLE $table (
+		training_id bigint(20) unsigned NOT NULL,
+		session_date date NOT NULL,
+		status varchar(20) NOT NULL DEFAULT 'normal',
+		updated_by bigint(20) unsigned NOT NULL DEFAULT 0,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (training_id, session_date),
+		KEY status (status),
+		KEY updated_by (updated_by)
+	) $charset;";
+	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+	dbDelta( $sql );
 }
 
 /**
@@ -156,12 +374,17 @@ function soe_create_tables() {
 	$training_persons = $wpdb->prefix . SOE_TABLE_TRAINING_PERSONS;
 	$sessions = $wpdb->prefix . SOE_TABLE_TRAINING_SESSIONS;
 	$attendance = $wpdb->prefix . SOE_TABLE_TRAINING_ATTENDANCE;
+	$session_status = $wpdb->prefix . SOE_TABLE_TRAINING_SESSION_STATUS;
 	$events = $wpdb->prefix . SOE_TABLE_EVENTS;
 	$event_persons = $wpdb->prefix . SOE_TABLE_EVENT_PERSONS;
 	$payrolls = $wpdb->prefix . SOE_TABLE_PAYROLLS;
 	$payroll_rows = $wpdb->prefix . SOE_TABLE_PAYROLL_ROWS;
 	$payroll_adjustments = $wpdb->prefix . SOE_TABLE_PAYROLL_ADJUSTMENTS;
-	$attendance_ops = $wpdb->prefix . SOE_TABLE_ATTENDANCE_OPS;
+	$attendance_ops  = $wpdb->prefix . SOE_TABLE_ATTENDANCE_OPS;
+	$ca_actions      = $wpdb->prefix . SOE_TABLE_CONTACT_ACTIONS;
+	$ca_fields       = $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_FIELDS;
+	$ca_items        = $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_ITEMS;
+	$ca_item_values  = $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_ITEM_VALUES;
 
 	$sql_trainings = "CREATE TABLE $trainings (
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -209,6 +432,17 @@ function soe_create_tables() {
 		PRIMARY KEY (training_id, session_date, person_id),
 		KEY training_id (training_id),
 		KEY person_id (person_id)
+	) $charset;";
+
+	$sql_session_status = "CREATE TABLE $session_status (
+		training_id bigint(20) unsigned NOT NULL,
+		session_date date NOT NULL,
+		status varchar(20) NOT NULL DEFAULT 'normal',
+		updated_by bigint(20) unsigned NOT NULL DEFAULT 0,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (training_id, session_date),
+		KEY status (status),
+		KEY updated_by (updated_by)
 	) $charset;";
 
 	$sql_events = "CREATE TABLE $events (
@@ -301,17 +535,92 @@ function soe_create_tables() {
 		KEY person_id (person_id)
 	) $charset;";
 
+	$sql_ca_actions = "CREATE TABLE $ca_actions (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		title varchar(255) NOT NULL DEFAULT '',
+		description text,
+		action_type varchar(200) NOT NULL DEFAULT '',
+		action_year smallint(5) unsigned DEFAULT NULL,
+		event_label varchar(255) NOT NULL DEFAULT '',
+		status varchar(50) NOT NULL DEFAULT 'active',
+		due_date date DEFAULT NULL,
+		responsible_user_id bigint(20) unsigned DEFAULT NULL,
+		created_by bigint(20) unsigned NOT NULL DEFAULT 0,
+		is_active tinyint(1) NOT NULL DEFAULT 1,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		KEY is_active (is_active),
+		KEY created_by (created_by),
+		KEY action_type (action_type),
+		KEY action_year (action_year),
+		KEY action_status (status)
+	) $charset;";
+
+	$sql_ca_fields = "CREATE TABLE $ca_fields (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		action_id bigint(20) unsigned NOT NULL,
+		field_key varchar(100) NOT NULL DEFAULT '',
+		field_label varchar(255) NOT NULL DEFAULT '',
+		field_type varchar(50) NOT NULL DEFAULT 'checkbox',
+		sort_order int(11) NOT NULL DEFAULT 0,
+		is_active tinyint(1) NOT NULL DEFAULT 1,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY action_field_key (action_id, field_key),
+		KEY action_id (action_id),
+		KEY is_active (is_active)
+	) $charset;";
+
+	$sql_ca_items = "CREATE TABLE $ca_items (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		action_id bigint(20) unsigned NOT NULL,
+		contact_id bigint(20) unsigned NOT NULL,
+		status varchar(50) NOT NULL DEFAULT 'open',
+		note text,
+		is_active tinyint(1) NOT NULL DEFAULT 1,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY action_contact (action_id, contact_id),
+		KEY action_id (action_id),
+		KEY contact_id (contact_id),
+		KEY is_active (is_active),
+		KEY action_status_active (action_id, status, is_active),
+		KEY contact_active (contact_id, is_active)
+	) $charset;";
+
+	$sql_ca_item_values = "CREATE TABLE $ca_item_values (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		item_id bigint(20) unsigned NOT NULL,
+		field_id bigint(20) unsigned NOT NULL,
+		value varchar(255) NOT NULL DEFAULT '',
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE KEY item_field (item_id, field_id),
+		KEY item_id (item_id),
+		KEY field_id (field_id),
+		KEY field_value (field_id, value(20))
+	) $charset;";
+
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	dbDelta( $sql_trainings );
 	dbDelta( $sql_training_persons );
 	dbDelta( $sql_sessions );
 	dbDelta( $sql_attendance );
+	dbDelta( $sql_session_status );
 	dbDelta( $sql_events );
 	dbDelta( $sql_event_persons );
 	dbDelta( $sql_payrolls );
 	dbDelta( $sql_payroll_rows );
 	dbDelta( $sql_payroll_adjustments );
 	dbDelta( $sql_attendance_ops );
+	dbDelta( $sql_ca_actions );
+	dbDelta( $sql_ca_fields );
+	dbDelta( $sql_ca_items );
+	dbDelta( $sql_ca_item_values );
 }
 
 /**
@@ -338,6 +647,10 @@ function soe_table_training_attendance() {
 	global $wpdb;
 	return $wpdb->prefix . SOE_TABLE_TRAINING_ATTENDANCE;
 }
+function soe_table_training_session_status() {
+	global $wpdb;
+	return $wpdb->prefix . SOE_TABLE_TRAINING_SESSION_STATUS;
+}
 function soe_table_events() {
 	global $wpdb;
 	return $wpdb->prefix . SOE_TABLE_EVENTS;
@@ -361,6 +674,22 @@ function soe_table_payroll_adjustments() {
 function soe_table_attendance_ops() {
 	global $wpdb;
 	return $wpdb->prefix . SOE_TABLE_ATTENDANCE_OPS;
+}
+function soe_table_contact_actions() {
+	global $wpdb;
+	return $wpdb->prefix . SOE_TABLE_CONTACT_ACTIONS;
+}
+function soe_table_contact_action_fields() {
+	global $wpdb;
+	return $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_FIELDS;
+}
+function soe_table_contact_action_items() {
+	global $wpdb;
+	return $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_ITEMS;
+}
+function soe_table_contact_action_item_values() {
+	global $wpdb;
+	return $wpdb->prefix . SOE_TABLE_CONTACT_ACTION_ITEM_VALUES;
 }
 
 // --- Trainings CRUD ---
@@ -402,6 +731,9 @@ function soe_db_training_delete( $id ) {
 		$ok = false;
 	}
 	if ( $ok && false === $wpdb->delete( soe_table_training_attendance(), array( 'training_id' => $id ), array( '%d' ) ) ) {
+		$ok = false;
+	}
+	if ( $ok && false === $wpdb->delete( soe_table_training_session_status(), array( 'training_id' => $id ), array( '%d' ) ) ) {
 		$ok = false;
 	}
 	if ( $ok && false === $wpdb->delete( soe_table_trainings(), array( 'id' => $id ), array( '%d' ) ) ) {
@@ -729,8 +1061,10 @@ function soe_db_training_get_sessions( $training_id ) {
 function soe_db_training_save_sessions( $training_id, $dates ) {
 	global $wpdb;
 	$table = soe_table_training_sessions();
+	$status_table = soe_table_training_session_status();
 	$training_id = (int) $training_id;
 	$wpdb->delete( $table, array( 'training_id' => $training_id ), array( '%d' ) );
+	$wpdb->delete( $status_table, array( 'training_id' => $training_id ), array( '%d' ) );
 	if ( empty( $dates ) ) {
 		return true;
 	}
@@ -782,10 +1116,146 @@ function soe_db_training_add_session( $training_id, $date ) {
 function soe_db_training_remove_session( $training_id, $date ) {
 	global $wpdb;
 	$table = soe_table_training_sessions();
+	$status_table = soe_table_training_session_status();
 	if ( strlen( $date ) !== 10 ) {
 		return false;
 	}
-	return (bool) $wpdb->delete( $table, array( 'training_id' => (int) $training_id, 'session_date' => $date ), array( '%d', '%s' ) );
+	$training_id = (int) $training_id;
+	$removed = (bool) $wpdb->delete( $table, array( 'training_id' => $training_id, 'session_date' => $date ), array( '%d', '%s' ) );
+	$wpdb->delete( $status_table, array( 'training_id' => $training_id, 'session_date' => $date ), array( '%d', '%s' ) );
+	return $removed;
+}
+
+/**
+ * Returns supported training session statuses.
+ *
+ * @return string[]
+ */
+function soe_db_training_get_session_status_values() {
+	return array( 'normal', 'cancelled' );
+}
+
+/**
+ * Normalizes a session status value to a supported status.
+ *
+ * @param string $status Raw status.
+ * @return string
+ */
+function soe_db_training_normalize_session_status( $status ) {
+	$status = is_string( $status ) ? sanitize_key( $status ) : '';
+	$allowed = soe_db_training_get_session_status_values();
+	return in_array( $status, $allowed, true ) ? $status : 'normal';
+}
+
+/**
+ * Gets all session statuses for a training.
+ *
+ * @param int $training_id Training ID.
+ * @return array [ session_date => status ].
+ */
+function soe_db_training_get_session_statuses( $training_id ) {
+	global $wpdb;
+	$table = soe_table_training_session_status();
+	$training_id = (int) $training_id;
+	$rows = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT session_date, status FROM $table WHERE training_id = %d",
+			$training_id
+		),
+		ARRAY_A
+	);
+	$out = array();
+	if ( is_array( $rows ) ) {
+		foreach ( $rows as $row ) {
+			$session_date = isset( $row['session_date'] ) ? (string) $row['session_date'] : '';
+			if ( strlen( $session_date ) !== 10 ) {
+				continue;
+			}
+			$out[ $session_date ] = soe_db_training_normalize_session_status( isset( $row['status'] ) ? (string) $row['status'] : '' );
+		}
+	}
+	return $out;
+}
+
+/**
+ * Gets a single session status for a training/date.
+ *
+ * @param int    $training_id  Training ID.
+ * @param string $session_date Session date (Y-m-d).
+ * @return string
+ */
+function soe_db_training_get_session_status( $training_id, $session_date ) {
+	global $wpdb;
+	$table = soe_table_training_session_status();
+	$training_id = (int) $training_id;
+	$session_date = is_string( $session_date ) ? $session_date : '';
+	if ( strlen( $session_date ) !== 10 ) {
+		return 'normal';
+	}
+	$status = $wpdb->get_var(
+		$wpdb->prepare(
+			"SELECT status FROM $table WHERE training_id = %d AND session_date = %s",
+			$training_id,
+			$session_date
+		)
+	);
+	return soe_db_training_normalize_session_status( (string) $status );
+}
+
+/**
+ * Sets a session status for training/date.
+ *
+ * @param int    $training_id  Training ID.
+ * @param string $session_date Session date (Y-m-d).
+ * @param string $status       Status value.
+ * @param int    $updated_by   WP user ID.
+ * @return bool
+ */
+function soe_db_training_set_session_status( $training_id, $session_date, $status, $updated_by = 0 ) {
+	global $wpdb;
+	$table = soe_table_training_session_status();
+	$training_id = (int) $training_id;
+	$updated_by = (int) $updated_by;
+	$session_date = is_string( $session_date ) ? $session_date : '';
+	if ( strlen( $session_date ) !== 10 ) {
+		return false;
+	}
+	$status = soe_db_training_normalize_session_status( $status );
+	if ( $status === 'normal' ) {
+		// Keep table sparse: default status is implicit.
+		$wpdb->delete(
+			$table,
+			array(
+				'training_id'  => $training_id,
+				'session_date' => $session_date,
+			),
+			array( '%d', '%s' )
+		);
+		return true;
+	}
+	$written = $wpdb->replace(
+		$table,
+		array(
+			'training_id'  => $training_id,
+			'session_date' => $session_date,
+			'status'       => $status,
+			'updated_by'   => $updated_by,
+			'updated_at'   => current_time( 'mysql' ),
+		),
+		array( '%d', '%s', '%s', '%d', '%s' )
+	);
+	return $written !== false;
+}
+
+/**
+ * Whether a session is cancelled.
+ *
+ * @param int    $training_id  Training ID.
+ * @param string $session_date Session date (Y-m-d).
+ * @return bool
+ */
+function soe_db_training_is_session_cancelled( $training_id, $session_date ) {
+	return soe_db_training_get_session_status( $training_id, $session_date ) === 'cancelled';
 }
 
 // --- Training attendance (DB) ---

@@ -4,6 +4,38 @@
         "title": "Contact",
         "fields": [
             {
+                "key": "field_6a01c042d6e58",
+                "label": "Beziehung",
+                "name": "beziehung",
+                "aria-label": "",
+                "type": "checkbox",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "acfenc_encrypt": 0,
+                "choices": {
+                    "Sponsor": "Sponsor",
+                    "Gönner": "Gönner",
+                    "Land": "Land",
+                    "Gemeinde": "Gemeinde",
+                    "Partner": "Partner",
+                    "Volontaire": "Volontaire"
+                },
+                "default_value": [],
+                "return_format": "value",
+                "allow_custom": 0,
+                "allow_in_bindings": 0,
+                "layout": "horizontal",
+                "toggle": 0,
+                "save_custom": 0,
+                "custom_choice_button_text": "Eine neue Auswahlmöglichkeit hinzufügen"
+            },
+            {
                 "key": "field_69cb86be5596b",
                 "label": "Geschäft",
                 "name": "geschaeft",
@@ -35,7 +67,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "50",
                     "class": "",
                     "id": ""
                 },
@@ -57,7 +89,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "50",
                     "class": "",
                     "id": ""
                 },
@@ -71,10 +103,10 @@
             },
             {
                 "key": "field_69cb871b5596e",
-                "label": "Bereich Intern",
-                "name": "bereich_intern",
+                "label": "Bemerkungen",
+                "name": "bemerkungen",
                 "aria-label": "",
-                "type": "text",
+                "type": "textarea",
                 "instructions": "",
                 "required": 0,
                 "conditional_logic": 0,
@@ -87,9 +119,9 @@
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
+                "rows": "",
                 "placeholder": "",
-                "prepend": "",
-                "append": ""
+                "new_lines": ""
             },
             {
                 "key": "field_69cb87235596f",
@@ -123,7 +155,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "33",
                     "class": "",
                     "id": ""
                 },
@@ -145,7 +177,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "33",
                     "class": "",
                     "id": ""
                 },
@@ -167,7 +199,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "33",
                     "class": "",
                     "id": ""
                 },
@@ -189,7 +221,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "33",
                     "class": "",
                     "id": ""
                 },
@@ -201,16 +233,37 @@
                 "append": ""
             },
             {
-                "key": "field_69cb874c55974",
-                "label": "E-Mail Individuell",
-                "name": "e-mail_individuell",
+                "key": "field_6a01ca42a73af",
+                "label": "E-Mail Privat",
+                "name": "e-mail_privat",
                 "aria-label": "",
                 "type": "email",
                 "instructions": "",
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "33",
+                    "class": "",
+                    "id": ""
+                },
+                "acfenc_encrypt": 0,
+                "default_value": "",
+                "allow_in_bindings": 0,
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_6a01bfc0d6e57",
+                "label": "E-Mail Person",
+                "name": "e-mail_person",
+                "aria-label": "",
+                "type": "email",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "33",
                     "class": "",
                     "id": ""
                 },
@@ -231,7 +284,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "50",
                     "class": "",
                     "id": ""
                 },
@@ -245,15 +298,15 @@
             },
             {
                 "key": "field_69cb876d55976",
-                "label": "Telefon Individuell",
-                "name": "telefon_individuell",
+                "label": "Telefon Privat",
+                "name": "telefon_privat",
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "50",
                     "class": "",
                     "id": ""
                 },
@@ -294,7 +347,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
+                    "width": "50",
                     "class": "",
                     "id": ""
                 },
@@ -316,29 +369,7 @@
                 "required": 0,
                 "conditional_logic": 0,
                 "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "acfenc_encrypt": 0,
-                "default_value": "",
-                "maxlength": "",
-                "allow_in_bindings": 0,
-                "placeholder": "",
-                "prepend": "",
-                "append": ""
-            },
-            {
-                "key": "field_69cb87ab5597a",
-                "label": "Tätigkeitsbereich",
-                "name": "taetigkeitsbereich",
-                "aria-label": "",
-                "type": "text",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
+                    "width": "50",
                     "class": "",
                     "id": ""
                 },
@@ -358,13 +389,20 @@
                 "type": "repeater",
                 "instructions": "",
                 "required": 0,
-                "conditional_logic": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_6a01c042d6e58",
+                            "operator": "!=",
+                            "value": "Volontaire"
+                        }
+                    ]
+                ],
                 "wrapper": {
                     "width": "",
                     "class": "",
                     "id": ""
                 },
-                "acfenc_encrypt": 0,
                 "layout": "table",
                 "pagination": 0,
                 "min": 0,
@@ -377,6 +415,29 @@
                         "key": "field_69cb884a5597d",
                         "label": "Datum",
                         "name": "datum",
+                        "aria-label": "",
+                        "type": "text",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 0,
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 0,
+                        "placeholder": "",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_69cb882a5597c"
+                    },
+                    {
+                        "key": "field_6a01c3c8df5d9",
+                        "label": "Bemerkung",
+                        "name": "bemerkung",
                         "aria-label": "",
                         "type": "text",
                         "instructions": "",
@@ -420,11 +481,11 @@
                         "parent_repeater": "field_69cb882a5597c"
                     },
                     {
-                        "key": "field_69cb88575597f",
-                        "label": "Weitere Infos",
-                        "name": "weitere_infos",
+                        "key": "field_6a01c3e2df5da",
+                        "label": "Verdankung",
+                        "name": "verdankung",
                         "aria-label": "",
-                        "type": "text",
+                        "type": "date_picker",
                         "instructions": "",
                         "required": 0,
                         "conditional_logic": 0,
@@ -434,198 +495,14 @@
                             "id": ""
                         },
                         "acfenc_encrypt": 0,
-                        "default_value": "",
-                        "maxlength": "",
+                        "display_format": "d\/m\/Y",
+                        "return_format": "d\/m\/Y",
+                        "first_day": 1,
+                        "default_to_current_date": 0,
                         "allow_in_bindings": 0,
-                        "placeholder": "",
-                        "prepend": "",
-                        "append": "",
                         "parent_repeater": "field_69cb882a5597c"
                     }
                 ]
-            },
-            {
-                "key": "field_69cb88085597b",
-                "label": "Präsenz Erwähnung\/Logo",
-                "name": "",
-                "aria-label": "",
-                "type": "tab",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "acfenc_encrypt": 0,
-                "placement": "top",
-                "endpoint": 0,
-                "selected": 0
-            },
-            {
-                "key": "field_69cb887e55981",
-                "label": "Jahresbericht",
-                "name": "jahresbericht",
-                "aria-label": "",
-                "type": "select",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "acfenc_encrypt": 0,
-                "choices": {
-                    "Logo": "Logo",
-                    "Name": "Name"
-                },
-                "default_value": false,
-                "return_format": "value",
-                "multiple": 0,
-                "allow_null": 0,
-                "allow_in_bindings": 0,
-                "ui": 0,
-                "ajax": 0,
-                "placeholder": "",
-                "create_options": 0,
-                "save_options": 0
-            },
-            {
-                "key": "field_69cb88b155982",
-                "label": "Spez. Events",
-                "name": "spez_events",
-                "aria-label": "",
-                "type": "checkbox",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "acfenc_encrypt": 0,
-                "choices": {
-                    "Flyer": "Flyer",
-                    "Blache\/Banner": "Blache\/Banner"
-                },
-                "default_value": [],
-                "return_format": "value",
-                "allow_custom": 0,
-                "allow_in_bindings": 0,
-                "layout": "vertical",
-                "toggle": 0,
-                "save_custom": 0,
-                "custom_choice_button_text": "Eine neue Auswahlmöglichkeit hinzufügen"
-            },
-            {
-                "key": "field_69cb8cdeccb90",
-                "label": "Versand",
-                "name": "",
-                "aria-label": "",
-                "type": "tab",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "acfenc_encrypt": 0,
-                "placement": "top",
-                "endpoint": 0,
-                "selected": 0
-            },
-            {
-                "key": "field_69cb8cfaccb92",
-                "label": "Jahresbericht",
-                "name": "jahresbericht",
-                "aria-label": "",
-                "type": "select",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "acfenc_encrypt": 0,
-                "choices": {
-                    "Mail": "Mail",
-                    "Post": "Post"
-                },
-                "default_value": false,
-                "return_format": "value",
-                "multiple": 0,
-                "allow_null": 0,
-                "allow_in_bindings": 0,
-                "ui": 0,
-                "ajax": 0,
-                "placeholder": "",
-                "create_options": 0,
-                "save_options": 0
-            },
-            {
-                "key": "field_69cb8d2dccb93",
-                "label": "Special Moments (Mail)",
-                "name": "special_moments_mail",
-                "aria-label": "",
-                "type": "checkbox",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "acfenc_encrypt": 0,
-                "choices": {
-                    "1. Quartal": "1. Quartal",
-                    "2. Quartal": "2. Quartal",
-                    "3. Quartal": "3. Quartal",
-                    "4. Quartal": "4. Quartal"
-                },
-                "default_value": [],
-                "return_format": "value",
-                "allow_custom": 0,
-                "allow_in_bindings": 0,
-                "layout": "vertical",
-                "toggle": 0,
-                "save_custom": 0,
-                "custom_choice_button_text": "Eine neue Auswahlmöglichkeit hinzufügen"
-            },
-            {
-                "key": "field_69cb8d86ccb94",
-                "label": "Weihnachtskarten",
-                "name": "weihnachtskarten",
-                "aria-label": "",
-                "type": "radio",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "acfenc_encrypt": 0,
-                "choices": {
-                    "Mail": "Mail",
-                    "Post": "Post"
-                },
-                "default_value": "",
-                "return_format": "value",
-                "allow_null": 0,
-                "other_choice": 0,
-                "allow_in_bindings": 0,
-                "layout": "vertical",
-                "save_other_choice": 0
             }
         ],
         "location": [

@@ -4,7 +4,7 @@
  *
  * Navigation point "Telefonbuch" in backend. Data: CPT mitglied (active only).
  * Admins see all; Hauptleiter/Leiter see only persons with at least one shared sport.
- * Two modes: Notfall (cards, tap-to-call) | Alle Daten (DataTables, colvis, expand).
+ * Modes: Notfall (cards) | Alle Daten (DataTables, colvis) | Kontakte (admin-only, CPT contact).
  *
  * @package Special_Olympics_Extension
  */
@@ -96,6 +96,270 @@ function soe_telefonbuch_get_members() {
 }
 
 /**
+ * Returns active contact posts for Telefonbuch "Kontakte" mode (published, not archived).
+ *
+ * @return WP_Post[]
+ */
+function soe_telefonbuch_get_contacts() {
+	if ( ! function_exists( 'soe_contact_meta_query_active_only' ) ) {
+		return array();
+	}
+	$args = array(
+		'post_type'      => 'contact',
+		'post_status'    => 'publish',
+		'posts_per_page' => -1,
+		'orderby'        => 'title',
+		'order'          => 'ASC',
+		'meta_query'     => soe_contact_meta_query_active_only(),
+	);
+	$query = new WP_Query( $args );
+	return $query->posts;
+}
+
+/**
+ * Formats contact "beziehung" checkbox values for display.
+ *
+ * @param mixed $raw ACF checkbox return (array of values).
+ * @return string
+ */
+function soe_telefonbuch_contact_beziehung_display( $raw ) {
+	if ( ! is_array( $raw ) || empty( $raw ) ) {
+		return '';
+	}
+	$choices = function_exists( 'soe_contact_beziehung_filter_choices' ) ? soe_contact_beziehung_filter_choices() : array();
+	$labels  = array();
+	foreach ( $raw as $val ) {
+		if ( is_string( $val ) && $val !== '' ) {
+			$labels[] = isset( $choices[ $val ] ) ? (string) $choices[ $val ] : $val;
+		}
+	}
+	return implode( ', ', $labels );
+}
+
+/**
+ * Formats contact "geldeingaenge" repeater as plain lines (for table cell and search).
+ *
+ * @param mixed $rows ACF repeater rows.
+ * @return string Non-HTML lines separated by newlines.
+ */
+function soe_telefonbuch_contact_geldeingaenge_plain( $rows ) {
+	if ( ! is_array( $rows ) || empty( $rows ) ) {
+		return '';
+	}
+	$lines = array();
+	foreach ( $rows as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+		$datum     = isset( $row['datum'] ) ? trim( (string) $row['datum'] ) : '';
+		$betrag    = isset( $row['betrag'] ) ? trim( (string) $row['betrag'] ) : '';
+		$bemerkung = isset( $row['bemerkung'] ) ? trim( (string) $row['bemerkung'] ) : '';
+		$verdank   = isset( $row['verdankung'] ) ? trim( (string) $row['verdankung'] ) : '';
+		$parts     = array_filter( array( $datum, $betrag, $bemerkung, $verdank ) );
+		if ( ! empty( $parts ) ) {
+			$lines[] = implode( ' | ', $parts );
+		}
+	}
+	return implode( "\n", $lines );
+}
+
+/**
+ * Counts non-empty Geldeingänge repeater rows.
+ *
+ * @param mixed $rows ACF repeater rows.
+ * @return int
+ */
+function soe_telefonbuch_contact_geldeingaenge_entry_count( $rows ) {
+	if ( ! is_array( $rows ) || empty( $rows ) ) {
+		return 0;
+	}
+	$n = 0;
+	foreach ( $rows as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+		$datum     = isset( $row['datum'] ) ? trim( (string) $row['datum'] ) : '';
+		$betrag    = isset( $row['betrag'] ) ? trim( (string) $row['betrag'] ) : '';
+		$bemerkung = isset( $row['bemerkung'] ) ? trim( (string) $row['bemerkung'] ) : '';
+		$verdank   = isset( $row['verdankung'] ) ? trim( (string) $row['verdankung'] ) : '';
+		if ( $datum !== '' || $betrag !== '' || $bemerkung !== '' || $verdank !== '' ) {
+			++$n;
+		}
+	}
+	return $n;
+}
+
+/**
+ * Builds expandable detail HTML for Telefonbuch contact rows (Geldeingänge + Contact Actions).
+ *
+ * @param int   $contact_id Contact post ID.
+ * @param mixed $geld_rows  ACF repeater rows for geldeingaenge.
+ * @param array $ca_rows    Rows from soe_db_ca_actions_for_contact() (or empty).
+ * @return string Safe HTML.
+ */
+function soe_telefonbuch_render_contact_detail_html( $contact_id, $geld_rows, array $ca_rows = array() ) {
+	ob_start();
+	echo '<div class="soe-telefonbuch-detail">';
+	echo '<details class="soe-telefonbuch-detail-medizin" open><summary>' . esc_html__( 'Geldeingänge', 'special-olympics-extension' ) . '</summary><div class="soe-telefonbuch-detail-medizin-inner">';
+	if ( ! is_array( $geld_rows ) || empty( $geld_rows ) ) {
+		echo '<p class="soe-telefonbuch-detail-empty">' . esc_html__( 'Keine Geldeingänge erfasst.', 'special-olympics-extension' ) . '</p>';
+	} else {
+		$has_row = false;
+		foreach ( $geld_rows as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$datum     = isset( $row['datum'] ) ? trim( (string) $row['datum'] ) : '';
+			$betrag    = isset( $row['betrag'] ) ? trim( (string) $row['betrag'] ) : '';
+			$bemerkung = isset( $row['bemerkung'] ) ? trim( (string) $row['bemerkung'] ) : '';
+			$verdank   = isset( $row['verdankung'] ) ? trim( (string) $row['verdankung'] ) : '';
+			if ( $datum === '' && $betrag === '' && $bemerkung === '' && $verdank === '' ) {
+				continue;
+			}
+			$has_row = true;
+			break;
+		}
+		if ( ! $has_row ) {
+			echo '<p class="soe-telefonbuch-detail-empty">' . esc_html__( 'Keine Geldeingänge erfasst.', 'special-olympics-extension' ) . '</p>';
+		} else {
+			echo '<table class="soe-telefonbuch-kontakte-table"><thead><tr>';
+			echo '<th>' . esc_html__( 'Datum', 'special-olympics-extension' ) . '</th>';
+			echo '<th>' . esc_html__( 'Betrag', 'special-olympics-extension' ) . '</th>';
+			echo '<th>' . esc_html__( 'Bemerkung', 'special-olympics-extension' ) . '</th>';
+			echo '<th>' . esc_html__( 'Verdankung', 'special-olympics-extension' ) . '</th>';
+			echo '</tr></thead><tbody>';
+			foreach ( $geld_rows as $row ) {
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$datum     = isset( $row['datum'] ) ? trim( (string) $row['datum'] ) : '';
+				$betrag    = isset( $row['betrag'] ) ? trim( (string) $row['betrag'] ) : '';
+				$bemerkung = isset( $row['bemerkung'] ) ? trim( (string) $row['bemerkung'] ) : '';
+				$verdank   = isset( $row['verdankung'] ) ? trim( (string) $row['verdankung'] ) : '';
+				if ( $datum === '' && $betrag === '' && $bemerkung === '' && $verdank === '' ) {
+					continue;
+				}
+				echo '<tr>';
+				echo '<td>' . esc_html( $datum ) . '</td>';
+				echo '<td>' . esc_html( $betrag ) . '</td>';
+				echo '<td>' . esc_html( $bemerkung ) . '</td>';
+				echo '<td>' . esc_html( $verdank ) . '</td>';
+				echo '</tr>';
+			}
+			echo '</tbody></table>';
+		}
+	}
+	echo '</div></details>';
+
+	echo '<details class="soe-telefonbuch-detail-medizin" open><summary>' . esc_html__( 'Kontakt-Aktionen', 'special-olympics-extension' ) . '</summary><div class="soe-telefonbuch-detail-medizin-inner">';
+	if ( empty( $ca_rows ) ) {
+		echo '<p class="soe-telefonbuch-detail-empty">' . esc_html__( 'In keiner Aktion erfasst.', 'special-olympics-extension' ) . '</p>';
+	} else {
+		$item_status_labels = array(
+			'open'      => __( 'Offen', 'special-olympics-extension' ),
+			'done'      => __( 'Erledigt', 'special-olympics-extension' ),
+			'cancelled' => __( 'Abgebrochen', 'special-olympics-extension' ),
+		);
+
+		$item_ids = array_filter( array_map( 'intval', array_column( $ca_rows, 'item_id' ) ) );
+		$all_vals = array();
+		if ( ! empty( $item_ids ) && function_exists( 'soe_db_ca_values_for_items' ) ) {
+			$all_vals = soe_db_ca_values_for_items( $item_ids );
+		}
+		$active_field_ids = array();
+		foreach ( $all_vals as $v ) {
+			if ( isset( $v['item_id'], $v['field_id'], $v['value'] ) && (string) $v['value'] === '1' ) {
+				$iid = (int) $v['item_id'];
+				$fid = (int) $v['field_id'];
+				if ( ! isset( $active_field_ids[ $iid ] ) ) {
+					$active_field_ids[ $iid ] = array();
+				}
+				$active_field_ids[ $iid ][] = $fid;
+			}
+		}
+
+		$action_ids   = array_values( array_unique( array_filter( array_map( 'intval', array_column( $ca_rows, 'id' ) ) ) ) );
+		$field_labels = array();
+		if ( ! empty( $action_ids ) && function_exists( 'soe_table_contact_action_fields' ) ) {
+			global $wpdb;
+			$fields_table = soe_table_contact_action_fields();
+			$placeholders = implode( ',', array_fill( 0, count( $action_ids ), '%d' ) );
+			$field_rows   = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT id, field_label FROM $fields_table WHERE action_id IN ($placeholders) AND is_active = 1 ORDER BY sort_order ASC, id ASC",
+					$action_ids
+				),
+				ARRAY_A
+			);
+			if ( is_array( $field_rows ) ) {
+				foreach ( $field_rows as $f ) {
+					if ( isset( $f['id'] ) ) {
+						$field_labels[ (int) $f['id'] ] = isset( $f['field_label'] ) ? (string) $f['field_label'] : '';
+					}
+				}
+			}
+		}
+
+		echo '<table class="soe-telefonbuch-kontakte-table"><thead><tr>';
+		echo '<th>' . esc_html__( 'Aktion', 'special-olympics-extension' ) . '</th>';
+		echo '<th>' . esc_html__( 'Typ', 'special-olympics-extension' ) . '</th>';
+		echo '<th>' . esc_html__( 'Jahr', 'special-olympics-extension' ) . '</th>';
+		echo '<th>' . esc_html__( 'Aktivierte Felder', 'special-olympics-extension' ) . '</th>';
+		echo '<th>' . esc_html__( 'Status der Aktion', 'special-olympics-extension' ) . '</th>';
+		echo '<th>' . esc_html__( 'Status der Teilnahme', 'special-olympics-extension' ) . '</th>';
+		echo '<th>' . esc_html__( 'Fälligkeit', 'special-olympics-extension' ) . '</th>';
+		echo '<th>' . esc_html__( 'Notiz', 'special-olympics-extension' ) . '</th>';
+		echo '</tr></thead><tbody>';
+		foreach ( $ca_rows as $row ) {
+			$aid         = isset( $row['id'] ) ? (int) $row['id'] : 0;
+			$edit_url    = $aid ? admin_url( 'admin.php?page=soe-contact-action-edit&id=' . $aid ) : '';
+			$title       = isset( $row['title'] ) ? (string) $row['title'] : '';
+			$atype       = isset( $row['action_type'] ) ? (string) $row['action_type'] : '';
+			$year        = isset( $row['action_year'] ) ? $row['action_year'] : '';
+			$astatus     = isset( $row['action_status'] ) ? (string) $row['action_status'] : '';
+			$istatus     = isset( $row['item_status'] ) ? (string) $row['item_status'] : '';
+			$due_raw     = isset( $row['due_date'] ) ? (string) $row['due_date'] : '';
+			$note        = isset( $row['note'] ) ? (string) $row['note'] : '';
+			$due_fmt     = $due_raw !== '' ? date_i18n( 'd.m.Y', strtotime( $due_raw ) ) : '—';
+			$item_status = isset( $item_status_labels[ $istatus ] ) ? $item_status_labels[ $istatus ] : $istatus;
+			$type_html   = ( $atype !== '' && function_exists( 'soe_ca_action_type_label' ) ) ? soe_ca_action_type_label( $atype ) : esc_html( $atype );
+			$act_html    = ( $astatus !== '' && function_exists( 'soe_ca_action_status_label' ) ) ? soe_ca_action_status_label( $astatus ) : esc_html( $astatus );
+
+			$iid           = isset( $row['item_id'] ) ? (int) $row['item_id'] : 0;
+			$active_fids   = isset( $active_field_ids[ $iid ] ) ? $active_field_ids[ $iid ] : array();
+			$active_labels = array();
+			foreach ( $active_fids as $fid ) {
+				if ( isset( $field_labels[ $fid ] ) && $field_labels[ $fid ] !== '' ) {
+					$active_labels[] = $field_labels[ $fid ];
+				}
+			}
+			$active_display = ! empty( $active_labels ) ? implode( ', ', $active_labels ) : '—';
+
+			echo '<tr>';
+			echo '<td>';
+			if ( $edit_url && $title !== '' ) {
+				echo '<a href="' . esc_url( $edit_url ) . '">' . esc_html( $title ) . '</a>';
+			} else {
+				echo esc_html( $title !== '' ? $title : '—' );
+			}
+			echo '</td>';
+			echo '<td>' . $type_html . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- labels return escaped HTML.
+			echo '<td>' . esc_html( $year !== '' && $year !== null ? (string) (int) $year : '—' ) . '</td>';
+			echo '<td>' . esc_html( $active_display ) . '</td>';
+			echo '<td>' . $act_html . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '<td>' . esc_html( $item_status ) . '</td>';
+			echo '<td>' . esc_html( $due_fmt ) . '</td>';
+			echo '<td>' . esc_html( $note !== '' ? $note : '—' ) . '</td>';
+			echo '</tr>';
+		}
+		echo '</tbody></table>';
+	}
+	echo '</div></details>';
+	echo '</div>';
+	return ob_get_clean();
+}
+
+/**
  * Enqueues scripts and styles for Telefonbuch page.
  *
  * @param string $hook Current admin hook.
@@ -143,24 +407,36 @@ function soe_telefonbuch_enqueue_scripts( $hook ) {
 		.soe-telefonbuch-switch .button { margin-right: 0.5rem; }
 		.soe-telefonbuch-switch .dashicons { vertical-align: middle; margin-right: 4px; }
 		.soe-telefonbuch-alldata { margin-top: 1rem; }
+		.soe-telefonbuch-contacts { margin-top: 1rem; }
 	';
 	wp_add_inline_style( 'datatables-css', $inline_css );
 }
 
 /**
- * Renders the Telefonbuch page: mode switch (Notfall | Alle Daten), then cards or table.
+ * Renders the Telefonbuch page: mode switch (Notfall | Alle Daten | Kontakte), then cards or table.
  */
 function soe_render_telefonbuch_page() {
 	if ( ! current_user_can( 'view_telefonbuch' ) ) {
 		wp_die( esc_html__( 'Du hast keine Berechtigung.', 'special-olympics-extension' ) );
 	}
-	$members = soe_telefonbuch_get_members();
-	$mode = 'notfall';
+	$mode         = 'notfall';
+	$user_id      = get_current_user_id();
+	$is_soe_admin = $user_id && function_exists( 'soe_user_is_admin' ) && soe_user_is_admin( $user_id );
 	if ( isset( $_GET['mode'] ) ) {
 		$mode_param = sanitize_text_field( wp_unslash( $_GET['mode'] ) );
 		if ( $mode_param === 'all' ) {
 			$mode = 'all';
+		} elseif ( $mode_param === 'contacts' && $is_soe_admin ) {
+			$mode = 'contacts';
 		}
+	}
+	$members = array();
+	if ( $mode === 'notfall' || $mode === 'all' ) {
+		$members = soe_telefonbuch_get_members();
+	}
+	$contacts = array();
+	if ( $mode === 'contacts' ) {
+		$contacts = soe_telefonbuch_get_contacts();
 	}
 	$base_url = admin_url( 'admin.php?page=soe-telefonbuch' );
 	$sport_terms = get_terms( array( 'taxonomy' => 'sport', 'hide_empty' => false ) );
@@ -173,6 +449,9 @@ function soe_render_telefonbuch_page() {
 		<p class="soe-telefonbuch-switch">
 			<a href="<?php echo esc_url( add_query_arg( 'mode', 'notfall', $base_url ) ); ?>" class="button button-large soe-switch-notfall <?php echo $mode === 'notfall' ? 'button-primary' : ''; ?>"><span class="dashicons dashicons-warning" aria-hidden="true"></span> <?php esc_html_e( 'Notfall', 'special-olympics-extension' ); ?></a>
 			<a href="<?php echo esc_url( add_query_arg( 'mode', 'all', $base_url ) ); ?>" class="button button-large <?php echo $mode === 'all' ? 'button-primary' : ''; ?>"><span class="dashicons dashicons-list-view" aria-hidden="true"></span> <?php esc_html_e( 'Alle Daten', 'special-olympics-extension' ); ?></a>
+			<?php if ( $is_soe_admin ) : ?>
+				<a href="<?php echo esc_url( add_query_arg( 'mode', 'contacts', $base_url ) ); ?>" class="button button-large <?php echo $mode === 'contacts' ? 'button-primary' : ''; ?>"><span class="dashicons dashicons-admin-users" aria-hidden="true"></span> <?php esc_html_e( 'Kontakte', 'special-olympics-extension' ); ?></a>
+			<?php endif; ?>
 		</p>
 
 		<?php if ( $mode === 'notfall' ) : ?>
@@ -297,7 +576,224 @@ function soe_render_telefonbuch_page() {
 					</div>
 				<?php endforeach; ?>
 			</div>
-		<?php else :
+		<?php elseif ( $mode === 'contacts' ) :
+			$col_config_contacts = array(
+				array( 'idx' => 1,  'label' => __( 'Bearbeiten', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 2,  'label' => __( 'Beziehung', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 3,  'label' => __( 'Geschäft', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 4,  'label' => __( 'Vorname', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 5,  'label' => __( 'Name', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 6,  'label' => __( 'Strasse/Nr.', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 7,  'label' => __( 'PLZ', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 8,  'label' => __( 'Ort', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 9,  'label' => __( 'Land', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 10, 'label' => __( 'E-Mail Geschäft', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 11, 'label' => __( 'E-Mail Privat', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 12, 'label' => __( 'E-Mail Person', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 13, 'label' => __( 'Telefon Geschäft', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 14, 'label' => __( 'Telefon Privat', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 15, 'label' => __( 'Webseite', 'special-olympics-extension' ), 'default' => true ),
+				array( 'idx' => 16, 'label' => __( 'Anrede Allg. Versand', 'special-olympics-extension' ), 'default' => false ),
+				array( 'idx' => 17, 'label' => __( 'Briefanrede', 'special-olympics-extension' ), 'default' => false ),
+				array( 'idx' => 18, 'label' => __( 'Bemerkungen', 'special-olympics-extension' ), 'default' => false ),
+				array( 'idx' => 19, 'label' => __( 'Geldeingänge & Aktionen', 'special-olympics-extension' ), 'default' => true ),
+			);
+			?>
+			<div class="soe-telefonbuch-contacts">
+				<div class="soe-telefonbuch-controls">
+					<div class="soe-colvis-actions">
+						<span class="description"><?php esc_html_e( 'Spalten einblenden:', 'special-olympics-extension' ); ?></span>
+						<div class="soe-colvis-checkboxes">
+							<?php foreach ( $col_config_contacts as $col ) : ?>
+								<label class="soe-colvis-checkbox<?php echo $col['label'] === '' ? ' soe-colvis-checkbox-empty' : ''; ?>">
+									<input type="checkbox" class="soe-colvis-cb" data-column="<?php echo (int) $col['idx']; ?>"<?php echo $col['default'] ? ' checked' : ''; ?>>
+									<?php echo $col['label'] !== '' ? esc_html( $col['label'] ) : '—'; ?>
+								</label>
+							<?php endforeach; ?>
+						</div>
+						<span class="soe-colvis-presets">
+							<button type="button" class="button button-small soe-colvis-all"><?php esc_html_e( 'Alle', 'special-olympics-extension' ); ?></button>
+							<button type="button" class="button button-small soe-colvis-default"><?php esc_html_e( 'Nur Standard', 'special-olympics-extension' ); ?></button>
+						</span>
+					</div>
+					<div class="soe-telefonbuch-filters soe-telefonbuch-contacts-filter-wrap">
+						<label for="soe-telefonbuch-contacts-filter"><?php esc_html_e( 'Filter', 'special-olympics-extension' ); ?>:</label>
+						<input type="search" id="soe-telefonbuch-contacts-filter" class="regular-text soe-telefonbuch-contacts-filter" placeholder="<?php esc_attr_e( 'Alle Spalten durchsuchen…', 'special-olympics-extension' ); ?>" autocomplete="off" />
+					</div>
+					<div class="soe-telefonbuch-actions soe-telefonbuch-contacts-copy-actions">
+						<button type="button" class="button soe-tb-contacts-copy-all" title="<?php esc_attr_e( 'Alle sichtbaren E-Mail-Adressen kopieren', 'special-olympics-extension' ); ?>"><?php esc_html_e( 'Mailadressen kopieren', 'special-olympics-extension' ); ?></button>
+						<button type="button" class="button soe-tb-contacts-copy-geschaeft" title="<?php esc_attr_e( 'E-Mail Geschäft kopieren', 'special-olympics-extension' ); ?>"><?php esc_html_e( 'E-Mail Geschäft', 'special-olympics-extension' ); ?></button>
+						<button type="button" class="button soe-tb-contacts-copy-privat" title="<?php esc_attr_e( 'E-Mail Privat kopieren', 'special-olympics-extension' ); ?>"><?php esc_html_e( 'E-Mail Privat', 'special-olympics-extension' ); ?></button>
+						<button type="button" class="button soe-tb-contacts-copy-person" title="<?php esc_attr_e( 'E-Mail Person kopieren', 'special-olympics-extension' ); ?>"><?php esc_html_e( 'E-Mail Person', 'special-olympics-extension' ); ?></button>
+					</div>
+				</div>
+				<table id="soe-telefonbuch-contact-table" class="display stripe" style="width:100%">
+					<thead>
+						<tr>
+							<th class="soe-search-col" aria-hidden="true"></th>
+							<th class="soe-edit-col"></th>
+							<th><?php esc_html_e( 'Beziehung', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Geschäft', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Vorname', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Name', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Strasse/Nr.', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'PLZ', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Ort', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Land', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'E-Mail Geschäft', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'E-Mail Privat', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'E-Mail Person', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Telefon Geschäft', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Telefon Privat', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Webseite', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Anrede Allg. Versand', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Briefanrede', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Bemerkungen', 'special-olympics-extension' ); ?></th>
+							<th><?php esc_html_e( 'Geldeingänge & Aktionen', 'special-olympics-extension' ); ?></th>
+							<th class="soe-detail-col"><?php esc_html_e( 'Detail', 'special-olympics-extension' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						$contact_detail_by_id = array();
+						foreach ( $contacts as $post_contact ) :
+							$cid = (int) $post_contact->ID;
+							$beziehung_raw = get_field( 'beziehung', $cid );
+							$beziehung     = soe_telefonbuch_contact_beziehung_display( $beziehung_raw );
+							$geschaeft     = get_field( 'geschaeft', $cid );
+							$vorname       = get_field( 'vorname', $cid );
+							$name          = get_field( 'name', $cid );
+							$strassenr     = get_field( 'strassenr', $cid );
+							$plz           = get_field( 'plz', $cid );
+							$ort           = get_field( 'ort', $cid );
+							$land          = get_field( 'land', $cid );
+							$em_g          = get_field( 'e-mail_geschaft', $cid );
+							$em_p          = get_field( 'e-mail_privat', $cid );
+							$em_per        = get_field( 'e-mail_person', $cid );
+							$tel_g         = get_field( 'telefon_geschaeft', $cid );
+							$tel_p         = get_field( 'telefon_privat', $cid );
+							$web           = get_field( 'webseite_link', $cid );
+							$anrede_av     = get_field( 'anrede_allgemeiner_versand', $cid );
+							$briefanrede   = get_field( 'briefanrede', $cid );
+							$bemerkungen   = get_field( 'bemerkungen', $cid );
+							$geld_rows     = get_field( 'geldeingaenge', $cid );
+							$geld_plain    = soe_telefonbuch_contact_geldeingaenge_plain( $geld_rows );
+							$geld_n        = soe_telefonbuch_contact_geldeingaenge_entry_count( $geld_rows );
+
+							$em_g_s   = is_string( $em_g ) ? trim( $em_g ) : '';
+							$em_p_s   = is_string( $em_p ) ? trim( $em_p ) : '';
+							$em_per_s = is_string( $em_per ) ? trim( $em_per ) : '';
+
+							$search_parts = array(
+								$beziehung,
+								(string) $geschaeft,
+								(string) $vorname,
+								(string) $name,
+								(string) $strassenr,
+								(string) $plz,
+								(string) $ort,
+								(string) $land,
+								$em_g_s,
+								$em_p_s,
+								$em_per_s,
+								(string) $tel_g,
+								(string) $tel_p,
+								(string) $web,
+								(string) $anrede_av,
+								(string) $briefanrede,
+								is_string( $bemerkungen ) ? wp_strip_all_tags( $bemerkungen ) : '',
+								$geld_plain,
+							);
+							if ( is_array( $beziehung_raw ) ) {
+								foreach ( $beziehung_raw as $bv ) {
+									if ( is_string( $bv ) ) {
+										$search_parts[] = $bv;
+									}
+								}
+							}
+							$ca_rows = function_exists( 'soe_db_ca_actions_for_contact' ) ? soe_db_ca_actions_for_contact( $cid ) : array();
+							foreach ( $ca_rows as $cr ) {
+								if ( ! empty( $cr['title'] ) ) {
+									$search_parts[] = $cr['title'];
+								}
+								if ( ! empty( $cr['action_type'] ) ) {
+									$search_parts[] = $cr['action_type'];
+								}
+								if ( ! empty( $cr['note'] ) ) {
+									$search_parts[] = wp_strip_all_tags( (string) $cr['note'] );
+								}
+								if ( isset( $cr['action_year'] ) && $cr['action_year'] !== '' && $cr['action_year'] !== null ) {
+									$search_parts[] = (string) (int) $cr['action_year'];
+								}
+							}
+							$search_parts_flat = array_map(
+								static function ( $v ) {
+									return is_scalar( $v ) ? trim( (string) $v ) : '';
+								},
+								$search_parts
+							);
+							$search_text = strtolower( implode( ' ', array_filter( $search_parts_flat ) ) );
+
+							$detail_html = soe_telefonbuch_render_contact_detail_html( $cid, $geld_rows, $ca_rows );
+							$contact_detail_by_id[ $cid ] = $detail_html;
+
+							$ca_n            = count( $ca_rows );
+							$summary_bits    = array();
+							if ( $geld_n > 0 ) {
+								$summary_bits[] = sprintf(
+									/* translators: %d: number of money receipt rows */
+									_n( '%d Geldeingang', '%d Geldeingänge', $geld_n, 'special-olympics-extension' ),
+									$geld_n
+								);
+							}
+							if ( $ca_n > 0 ) {
+								$summary_bits[] = sprintf(
+									/* translators: %d: number of contact actions */
+									_n( '%d Aktion', '%d Aktionen', $ca_n, 'special-olympics-extension' ),
+									$ca_n
+								);
+							}
+							$geld_aktion_summary = ! empty( $summary_bits ) ? implode( ' · ', $summary_bits ) : '—';
+
+							$edit_link = current_user_can( 'edit_post', $cid ) ? get_edit_post_link( $cid, 'raw' ) : '';
+							?>
+							<tr data-id="<?php echo (int) $cid; ?>"
+								data-email-geschaeft="<?php echo esc_attr( $em_g_s ); ?>"
+								data-email-privat="<?php echo esc_attr( $em_p_s ); ?>"
+								data-email-person="<?php echo esc_attr( $em_per_s ); ?>">
+								<td class="soe-search-col" data-search="<?php echo esc_attr( $search_text ); ?>"><?php echo esc_html( $search_text ); ?></td>
+								<td class="soe-edit-col"><?php if ( $edit_link ) : ?><a href="<?php echo esc_url( $edit_link ); ?>" class="soe-telefonbuch-edit" title="<?php esc_attr_e( 'Bearbeiten', 'special-olympics-extension' ); ?>" aria-label="<?php esc_attr_e( 'Bearbeiten', 'special-olympics-extension' ); ?>" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-edit" aria-hidden="true"></span></a><?php endif; ?></td>
+								<td><?php echo esc_html( $beziehung ); ?></td>
+								<td><?php echo esc_html( is_string( $geschaeft ) ? $geschaeft : '' ); ?></td>
+								<td><?php echo esc_html( is_string( $vorname ) ? $vorname : '' ); ?></td>
+								<td><?php echo esc_html( is_string( $name ) ? $name : '' ); ?></td>
+								<td><?php echo esc_html( is_string( $strassenr ) ? $strassenr : '' ); ?></td>
+								<td><?php echo esc_html( is_string( $plz ) ? $plz : '' ); ?></td>
+								<td><?php echo esc_html( is_string( $ort ) ? $ort : '' ); ?></td>
+								<td><?php echo esc_html( is_string( $land ) ? $land : '' ); ?></td>
+								<td><?php echo $em_g_s !== '' ? '<a href="mailto:' . esc_attr( $em_g_s ) . '">' . esc_html( $em_g_s ) . '</a>' : ''; ?></td>
+								<td><?php echo $em_p_s !== '' ? '<a href="mailto:' . esc_attr( $em_p_s ) . '">' . esc_html( $em_p_s ) . '</a>' : ''; ?></td>
+								<td><?php echo $em_per_s !== '' ? '<a href="mailto:' . esc_attr( $em_per_s ) . '">' . esc_html( $em_per_s ) . '</a>' : ''; ?></td>
+								<td><?php echo $tel_g && is_string( $tel_g ) ? '<a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', $tel_g ) ) . '">' . esc_html( $tel_g ) . '</a>' : ''; ?></td>
+								<td><?php echo $tel_p && is_string( $tel_p ) ? '<a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', $tel_p ) ) . '">' . esc_html( $tel_p ) . '</a>' : ''; ?></td>
+								<td><?php echo $web && is_string( $web ) ? '<a href="' . esc_url( $web ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $web ) . '</a>' : ''; ?></td>
+								<td><?php echo esc_html( is_string( $anrede_av ) ? $anrede_av : '' ); ?></td>
+								<td><?php echo esc_html( is_string( $briefanrede ) ? $briefanrede : '' ); ?></td>
+								<td><?php echo is_string( $bemerkungen ) && trim( $bemerkungen ) !== '' ? nl2br( esc_html( trim( $bemerkungen ) ) ) : ''; ?></td>
+								<td class="soe-tb-contact-summary-col"><?php echo esc_html( $geld_aktion_summary ); ?></td>
+								<td><button type="button" class="button-link soe-telefonbuch-expand" aria-label="<?php esc_attr_e( 'Detail einblenden', 'special-olympics-extension' ); ?>" data-label-expand="<?php esc_attr_e( 'Detail einblenden', 'special-olympics-extension' ); ?>" data-label-collapse="<?php esc_attr_e( 'Detail ausblenden', 'special-olympics-extension' ); ?>"><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></button></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+				<script type="text/javascript">
+					window.soeTelefonbuchContactDetails = <?php echo wp_json_encode( $contact_detail_by_id ); ?>;
+					window.soeTelefonbuchContactDefaultVisible = <?php echo wp_json_encode( array_values( array_map( function ( $c ) { return $c['idx']; }, array_filter( $col_config_contacts, function ( $c ) { return $c['default']; } ) ) ) ); ?>;
+					window.soeTelefonbuchContactDetailCol = 20;
+					window.soeTelefonbuchContactMaxColIndex = 20;
+				</script>
+			</div>
+		<?php elseif ( $mode === 'all' ) :
 			usort( $members, function ( $a, $b ) {
 				$na = get_field( 'nachname', $a->ID );
 				$nb = get_field( 'nachname', $b->ID );
@@ -347,7 +843,9 @@ function soe_render_telefonbuch_page() {
 							<button type="button" class="button button-small soe-colvis-default"><?php esc_html_e( 'Nur Standard', 'special-olympics-extension' ); ?></button>
 						</span>
 					</div>
-					<div class="soe-telefonbuch-filters">
+					<div class="soe-telefonbuch-filters soe-telefonbuch-alldata-filter-wrap">
+						<label for="soe-telefonbuch-alldata-filter"><?php esc_html_e( 'Filter', 'special-olympics-extension' ); ?>:</label>
+						<input type="search" id="soe-telefonbuch-alldata-filter" class="regular-text soe-telefonbuch-alldata-filter" placeholder="<?php esc_attr_e( 'Alle Spalten durchsuchen…', 'special-olympics-extension' ); ?>" autocomplete="off" />
 						<label for="soe-filter-sport"><?php esc_html_e( 'Sportart', 'special-olympics-extension' ); ?>:</label>
 						<select id="soe-filter-sport" class="soe-table-filter" data-column="10">
 							<option value=""><?php esc_html_e( 'Alle', 'special-olympics-extension' ); ?></option>
@@ -795,7 +1293,7 @@ function soe_render_telefonbuch_page() {
 							?>
 							<tr data-id="<?php echo (int) $m->ID; ?>" data-email="<?php echo esc_attr( is_string( $email ) ? $email : '' ); ?>">
 								<td class="soe-search-col" data-search="<?php echo esc_attr( $search_text ); ?>"><?php echo esc_html( $search_text ); ?></td>
-								<td class="soe-edit-col"><?php if ( $edit_link ) : ?><a href="<?php echo esc_url( $edit_link ); ?>" class="soe-telefonbuch-edit" title="<?php esc_attr_e( 'Bearbeiten', 'special-olympics-extension' ); ?>" aria-label="<?php esc_attr_e( 'Bearbeiten', 'special-olympics-extension' ); ?>"><span class="dashicons dashicons-edit" aria-hidden="true"></span></a><?php endif; ?></td>
+								<td class="soe-edit-col"><?php if ( $edit_link ) : ?><a href="<?php echo esc_url( $edit_link ); ?>" class="soe-telefonbuch-edit" title="<?php esc_attr_e( 'Bearbeiten', 'special-olympics-extension' ); ?>" aria-label="<?php esc_attr_e( 'Bearbeiten', 'special-olympics-extension' ); ?>" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-edit" aria-hidden="true"></span></a><?php endif; ?></td>
 								<td><?php echo esc_html( (string) $nachname ); ?></td>
 								<td><?php echo esc_html( (string) $vorname ); ?></td>
 								<td><?php echo esc_html( $role_str ); ?></td>

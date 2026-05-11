@@ -158,20 +158,19 @@ function soe_mitglied_restrict_list_to_own_for_non_admin( $query ) {
 		$query->set( 'orderby', 'title' );
 		$query->set( 'order', 'ASC' );
 	}
+	$meta_query = array();
 	// Filter by member status: default = only active; optional "Archiviert" or "Alle Status".
 	$status_filter = isset( $_GET['soe_member_status'] ) ? sanitize_text_field( wp_unslash( $_GET['soe_member_status'] ) ) : '';
 	if ( $status_filter === SOE_MEMBER_STATUS_ARCHIVED ) {
-		$query->set( 'meta_query', array(
-			array(
-				'key'   => SOE_MEMBER_STATUS_META,
-				'value' => SOE_MEMBER_STATUS_ARCHIVED,
-			),
-		) );
+		$meta_query[] = array(
+			'key'   => SOE_MEMBER_STATUS_META,
+			'value' => SOE_MEMBER_STATUS_ARCHIVED,
+		);
 	} elseif ( $status_filter === 'all' ) {
 		// Explicit "Alle Status" – no meta_query
 	} else {
 		// Default and "Aktiv": only active (or meta not set)
-		$query->set( 'meta_query', array(
+		$meta_query[] = array(
 			'relation' => 'OR',
 			array(
 				'key'   => SOE_MEMBER_STATUS_META,
@@ -181,7 +180,39 @@ function soe_mitglied_restrict_list_to_own_for_non_admin( $query ) {
 				'key'     => SOE_MEMBER_STATUS_META,
 				'compare' => 'NOT EXISTS',
 			),
-		) );
+		);
+	}
+
+	$role_filter = isset( $_GET['soe_member_role'] ) ? sanitize_text_field( wp_unslash( $_GET['soe_member_role'] ) ) : '';
+	if ( $role_filter !== '' ) {
+		$meta_query[] = array(
+			'key'     => 'role',
+			'value'   => '"' . $role_filter . '"',
+			'compare' => 'LIKE',
+		);
+	}
+	if ( ! empty( $meta_query ) ) {
+		$query->set(
+			'meta_query',
+			array_merge(
+				array( 'relation' => 'AND' ),
+				$meta_query
+			)
+		);
+	}
+
+	$sport_filter = isset( $_GET['soe_member_sport'] ) ? sanitize_text_field( wp_unslash( $_GET['soe_member_sport'] ) ) : '';
+	if ( $sport_filter !== '' && taxonomy_exists( 'sport' ) ) {
+		$query->set(
+			'tax_query',
+			array(
+				array(
+					'taxonomy' => 'sport',
+					'field'    => 'slug',
+					'terms'    => $sport_filter,
+				),
+			)
+		);
 	}
 	// Admins see all (aside from status filter above)
 	if ( current_user_can( 'manage_options' ) ) {
@@ -207,6 +238,44 @@ function soe_mitglied_list_add_status_filter( $post_type ) {
 		<option value="all" <?php selected( $current, 'all' ); ?>><?php esc_html_e( 'Alle Status', 'special-olympics-extension' ); ?></option>
 		<option value="<?php echo esc_attr( SOE_MEMBER_STATUS_ARCHIVED ); ?>" <?php selected( $current, SOE_MEMBER_STATUS_ARCHIVED ); ?>><?php esc_html_e( 'Nur Archivierte', 'special-olympics-extension' ); ?></option>
 	</select>
+	<?php
+	$role_current = isset( $_GET['soe_member_role'] ) ? sanitize_text_field( wp_unslash( $_GET['soe_member_role'] ) ) : '';
+	$role_options = array(
+		'ansprechperson'      => __( 'Ansprechperson', 'special-olympics-extension' ),
+		'athlet_in'           => __( 'Athlet*in', 'special-olympics-extension' ),
+		'hauptleiter_in'      => __( 'Hauptleiter*in', 'special-olympics-extension' ),
+		'leiter_in'           => __( 'Leiter*in', 'special-olympics-extension' ),
+		'unified'             => __( 'Unified', 'special-olympics-extension' ),
+		'assistenztrainer_in' => __( 'Assistenztrainer*in', 'special-olympics-extension' ),
+		'helfer_in'           => __( 'Helfer*in', 'special-olympics-extension' ),
+		'praktikant_in'       => __( 'Praktikant*in', 'special-olympics-extension' ),
+		'schueler_in'         => __( 'Schüler*in', 'special-olympics-extension' ),
+		'athlete_leader'      => __( 'Athlete Leader', 'special-olympics-extension' ),
+	);
+	?>
+	<select name="soe_member_role">
+		<option value=""><?php esc_html_e( 'Alle Rollen', 'special-olympics-extension' ); ?></option>
+		<?php foreach ( $role_options as $role_slug => $role_label ) : ?>
+			<option value="<?php echo esc_attr( $role_slug ); ?>" <?php selected( $role_current, $role_slug ); ?>><?php echo esc_html( $role_label ); ?></option>
+		<?php endforeach; ?>
+	</select>
+	<?php if ( taxonomy_exists( 'sport' ) ) : ?>
+		<?php
+		$sport_current = isset( $_GET['soe_member_sport'] ) ? sanitize_text_field( wp_unslash( $_GET['soe_member_sport'] ) ) : '';
+		$sports = get_terms(
+			array(
+				'taxonomy'   => 'sport',
+				'hide_empty' => false,
+			)
+		);
+		?>
+		<select name="soe_member_sport">
+			<option value=""><?php esc_html_e( 'Alle Sportarten', 'special-olympics-extension' ); ?></option>
+			<?php foreach ( (array) $sports as $sport_term ) : ?>
+				<option value="<?php echo esc_attr( $sport_term->slug ); ?>" <?php selected( $sport_current, $sport_term->slug ); ?>><?php echo esc_html( $sport_term->name ); ?></option>
+			<?php endforeach; ?>
+		</select>
+	<?php endif; ?>
 	<?php
 }
 
