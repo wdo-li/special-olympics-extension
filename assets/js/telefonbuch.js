@@ -470,7 +470,7 @@
 	function soeNotfallApplyFilters() {
 		var q = ($('#soe-notfall-search').val() || '').toLowerCase().trim();
 		var sportVal = ($('#soe-notfall-sport').val() || '').trim();
-		$('.soe-telefonbuch-card').each(function () {
+		$('.soe-telefonbuch-notfall .soe-notfall-card').each(function () {
 			var $card = $(this);
 			var text = $card.data('search-text') || '';
 			var sport = ($card.data('sport') || '').trim();
@@ -481,4 +481,14 @@
 	}
 	$('#soe-notfall-search').on('input', soeNotfallApplyFilters);
 	$('#soe-notfall-sport').on('change', soeNotfallApplyFilters);
+
+	$(document).on('click', '.soe-notfall-card-toggle', function () {
+		var $btn = $(this);
+		var $card = $btn.closest('.soe-notfall-card');
+		var $panel = $card.find('.soe-notfall-card-panel').first();
+		var open = $card.hasClass('soe-notfall-card-expanded');
+		$card.toggleClass('soe-notfall-card-expanded', !open);
+		$btn.attr('aria-expanded', open ? 'false' : 'true');
+		$panel.prop('hidden', open);
+	});
 })(jQuery);

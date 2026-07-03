@@ -101,6 +101,173 @@
 	}
 
 	/**
+	 * CSS class that hides medication consent fields (paired with admin CSS in acf-medication-consent.php).
+	 */
+	var MEDICATION_CONSENT_HIDDEN_CLASS = (typeof soeMitgliedAdmin !== 'undefined' && soeMitgliedAdmin.medicationConsentHidden)
+		? soeMitgliedAdmin.medicationConsentHidden
+		: 'soe-medication-consent-hidden';
+
+	/**
+	 * Repeater/consent field key pairs for medication consent toggles.
+	 */
+	var medicationConsentPairs = (typeof soeMitgliedAdmin !== 'undefined' && Array.isArray(soeMitgliedAdmin.medicationConsentPairs))
+		? soeMitgliedAdmin.medicationConsentPairs
+		: [
+			{ repeaterKey: 'field_682b36ce17bbe', consentKey: 'field_6a477cb605f1b' },
+			{ repeaterKey: 'field_6978bea705af8', consentKey: 'field_6a477d901f4d3' }
+		];
+
+	/**
+	 * Whether a medication repeater DOM contains at least one non-empty text value.
+	 *
+	 * @param {jQuery} $repeaterField Repeater .acf-field wrapper.
+	 * @return {boolean}
+	 */
+	function repeaterDomHasMedicationData($repeaterField) {
+		if (!$repeaterField || !$repeaterField.length) {
+			return false;
+		}
+
+		var hasData = false;
+		$repeaterField.find('.acf-row:not(.acf-clone)').each(function () {
+			$(this).find('input[type="text"], textarea').each(function () {
+				var value = $(this).val();
+				if (value && String(value).trim() !== '') {
+					hasData = true;
+					return false;
+				}
+			});
+			if (hasData) {
+				return false;
+			}
+		});
+
+		return hasData;
+	}
+
+	/**
+	 * Tracks whether a repeater previously contained medication data (for reset logic).
+	 */
+	var medicationConsentHadData = {};
+
+	/**
+	 * Toggles ACF required UI (class, data attribute, label asterisk) on consent fields.
+	 *
+	 * @param {jQuery} $consent   Consent .acf-field wrapper.
+	 * @param {boolean} isRequired Whether the field is required.
+	 */
+	function setMedicationConsentRequiredState($consent, isRequired) {
+		if (!$consent || !$consent.length) {
+			return;
+		}
+
+		var $label = $consent.find('.acf-label label').first();
+
+		if (isRequired) {
+			$consent.addClass('is-required').attr('data-required', 1);
+			if ($label.length && !$label.find('.acf-required').length) {
+				$label.append(' <span class="acf-required">*</span>');
+			}
+		} else {
+			$consent.removeClass('is-required').removeAttr('data-required');
+			$consent.find('.acf-label .acf-required').remove();
+		}
+	}
+
+	/**
+	 * Show or hide one consent field based on repeater DOM content.
+	 * Only resets the consent checkbox when medication data was removed by the user.
+	 *
+	 * @param {string} repeaterKey ACF field key of the repeater.
+	 * @param {string} consentKey  ACF field key of the consent field.
+	 */
+	function updateMedicationConsentPair(repeaterKey, consentKey) {
+		var $repeater = $('.acf-field[data-key="' + repeaterKey + '"]');
+		var $consent = $('.acf-field[data-key="' + consentKey + '"]');
+		if (!$repeater.length || !$consent.length) {
+			return;
+		}
+
+		var hadData = medicationConsentHadData[repeaterKey] === true;
+		var hasData = repeaterDomHasMedicationData($repeater);
+
+		if (hasData) {
+			$consent.removeClass(MEDICATION_CONSENT_HIDDEN_CLASS);
+			setMedicationConsentRequiredState($consent, true);
+		} else {
+			$consent.addClass(MEDICATION_CONSENT_HIDDEN_CLASS);
+			setMedicationConsentRequiredState($consent, false);
+			if (hadData) {
+				$consent.find('input[type="checkbox"]').prop('checked', false);
+				$consent.find('input[type="hidden"]').each(function () {
+					var $input = $(this);
+					if ($input.closest('.acf-true-false').length) {
+						$input.val(0);
+					}
+				});
+				if (typeof acf !== 'undefined' && acf.getField) {
+					var consentField = acf.getField(consentKey);
+					if (consentField && consentField.val) {
+						consentField.val(0);
+					}
+				}
+			}
+		}
+
+		medicationConsentHadData[repeaterKey] = hasData;
+	}
+
+	/**
+	 * Update all medication consent field pairs.
+	 */
+	function updateAllMedicationConsentFields() {
+		medicationConsentPairs.forEach(function (pair) {
+			updateMedicationConsentPair(pair.repeaterKey, pair.consentKey);
+		});
+	}
+
+	/**
+	 * Bind input/change listeners on medication repeaters.
+	 */
+	function bindMedicationConsentListeners() {
+		medicationConsentPairs.forEach(function (pair) {
+			var $repeater = $('.acf-field[data-key="' + pair.repeaterKey + '"]');
+			$repeater.off('.soeMedicationConsent');
+			$repeater.on(
+				'input.soeMedicationConsent change.soeMedicationConsent click.soeMedicationConsent',
+				'input, textarea, .acf-button, .acf-icon',
+				function () {
+					updateMedicationConsentPair(pair.repeaterKey, pair.consentKey);
+				}
+			);
+		});
+	}
+
+	/**
+	 * Toggle consent fields for Medikamentangaben and Notfallmedikamente repeaters.
+	 */
+	function setupMedicationConsentToggles() {
+		updateAllMedicationConsentFields();
+		bindMedicationConsentListeners();
+
+		if (typeof acf === 'undefined' || !acf.addAction) {
+			return;
+		}
+
+		acf.addAction('ready', function () {
+			updateAllMedicationConsentFields();
+			bindMedicationConsentListeners();
+			setTimeout(updateAllMedicationConsentFields, 150);
+			setTimeout(updateAllMedicationConsentFields, 600);
+		});
+
+		medicationConsentPairs.forEach(function (pair) {
+			acf.addAction('ready_field/key=' + pair.repeaterKey, updateAllMedicationConsentFields);
+			acf.addAction('ready_field/key=' + pair.consentKey, updateAllMedicationConsentFields);
+		});
+	}
+
+	/**
 	 * Re-evaluate ACF conditional logic when role is pre-selected (e.g. editing existing member).
 	 * Fixes tabs (Kleidung, Kontaktpersonen, Medizinische Informationen) not showing on load.
 	 * Runs after ACF form is ready and values are loaded.
@@ -251,6 +418,7 @@
 		setDefaultRoleAthlet();
 		renameMitgliedMetaBoxTitle();
 		refreshAcfConditionals();
+		setupMedicationConsentToggles();
 		setupMedicalFileProxy();
 		// Run again after possible late rendering (ACF, block editor, etc.).
 		setTimeout(renameMitgliedMetaBoxTitle, 500);

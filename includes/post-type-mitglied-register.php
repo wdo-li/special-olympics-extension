@@ -51,7 +51,7 @@ function soe_grant_mitglied_caps_to_roles() {
 
 	// Other SOE roles: only read_mitglied for "Mein Account" access (actual edit handled by map_meta_cap).
 	// Remove any previously granted edit capabilities.
-	$soe_roles = array( 'hauptleiter_in', 'leiter_in', 'athlet_in', 'unified', 'assistenztrainer_in', 'helfer_in', 'praktikant_in', 'schueler_in', 'athlete_leader' );
+	$soe_roles = array( 'hauptleiter_in', 'leiter_in', 'athlet_in', 'unified', 'assistenztrainer_in', 'helfer_in', 'praktikant_in', 'schueler_in', 'athlete_leader', 'stiftungsrat' );
 	$caps_to_remove = array( 'edit_mitglieds', 'edit_mitglied', 'edit_published_mitglieds', 'publish_mitglieds', 'edit_others_mitglieds' );
 	foreach ( $soe_roles as $role_slug ) {
 		$role = get_role( $role_slug );

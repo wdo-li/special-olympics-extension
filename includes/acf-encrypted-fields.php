@@ -46,8 +46,11 @@ final class ACF_Encrypted_Fields {
 
 		add_action( 'acf/render_field_settings', array( $this, 'render_field_setting' ), 20 );
 		add_filter( 'acf/update_value', array( $this, 'filter_update_value' ), 10, 3 );
-		add_filter( 'acf/load_value', array( $this, 'filter_load_value' ), 10, 3 );
-		add_filter( 'acf/format_value', array( $this, 'filter_format_value' ), 10, 3 );
+		// Priority 5: decrypt before soe_acf_checkbox_load_value_normalize (priority 10) wraps ENC strings into arrays.
+		add_filter( 'acf/load_value', array( $this, 'filter_load_value' ), 5, 3 );
+		add_filter( 'acf/load_value/type=checkbox', array( $this, 'filter_load_value' ), 5, 3 );
+		add_filter( 'acf/format_value', array( $this, 'filter_format_value' ), 5, 3 );
+		add_filter( 'acf/format_value/type=checkbox', array( $this, 'filter_format_value' ), 5, 3 );
 
 		add_action( 'init', function () {
 			if ( ! function_exists( 'acfenc_encrypt_value' ) ) {
@@ -105,9 +108,14 @@ final class ACF_Encrypted_Fields {
 			return;
 		}
 
+		$instructions = __( 'Speichert den Feldwert verschlüsselt (AES-256-GCM) in der Datenbank. Ausgabe wird automatisch entschlüsselt.', 'special-olympics-extension' );
+		if ( $this->field_is_repeater_sub_field( $field ) ) {
+			$instructions .= ' ' . __( 'Bei Repeater-Subfeldern wird jede Zeile einzeln verschlüsselt; die Zeilenanzahl bleibt unverschlüsselt.', 'special-olympics-extension' );
+		}
+
 		acf_render_field_setting( $field, array(
 			'label'         => __( 'Encrypt value in database', 'special-olympics-extension' ),
-			'instructions'  => __( 'Speichert den Feldwert verschlüsselt (AES-256-GCM) in der Datenbank. Ausgabe wird automatisch entschlüsselt.', 'special-olympics-extension' ),
+			'instructions'  => $instructions,
 			'name'          => 'acfenc_encrypt',
 			'type'          => 'true_false',
 			'ui'            => 1,
@@ -115,8 +123,141 @@ final class ACF_Encrypted_Fields {
 		) );
 	}
 
+	/**
+	 * Whether the field is a sub-field of an ACF repeater.
+	 *
+	 * @param array<string, mixed> $field ACF field array.
+	 * @return bool
+	 */
+	private function field_is_repeater_sub_field( $field ) {
+		if ( ! is_array( $field ) ) {
+			return false;
+		}
+		if ( ! empty( $field['parent_repeater'] ) ) {
+			return true;
+		}
+		if ( empty( $field['parent'] ) || ! function_exists( 'acf_get_field' ) ) {
+			return false;
+		}
+		$parent = acf_get_field( $field['parent'] );
+		return is_array( $parent ) && isset( $parent['type'] ) && $parent['type'] === 'repeater';
+	}
+
+	/**
+	 * Returns the parent repeater field for a repeater sub-field.
+	 *
+	 * @param array<string, mixed> $field ACF field array.
+	 * @return array<string, mixed>|null
+	 */
+	private function get_repeater_parent_field( $field ) {
+		if ( ! is_array( $field ) || ! function_exists( 'acf_get_field' ) ) {
+			return null;
+		}
+		$parent_key = ! empty( $field['parent_repeater'] ) ? $field['parent_repeater'] : ( $field['parent'] ?? '' );
+		if ( ! $parent_key ) {
+			return null;
+		}
+		$parent = acf_get_field( $parent_key );
+		if ( ! is_array( $parent ) || ( $parent['type'] ?? '' ) !== 'repeater' ) {
+			return null;
+		}
+		return $parent;
+	}
+
+	/**
+	 * Whether the field is a sub-field of an ACF group.
+	 *
+	 * @param array<string, mixed> $field ACF field array.
+	 * @return bool
+	 */
+	private function field_is_group_sub_field( $field ) {
+		if ( ! is_array( $field ) || empty( $field['parent'] ) || ! function_exists( 'acf_get_field' ) ) {
+			return false;
+		}
+		$parent = acf_get_field( $field['parent'] );
+		return is_array( $parent ) && isset( $parent['type'] ) && $parent['type'] === 'group';
+	}
+
+	/**
+	 * Returns the parent group field for a group sub-field.
+	 *
+	 * @param array<string, mixed> $field ACF field array.
+	 * @return array<string, mixed>|null
+	 */
+	private function get_group_parent_field( $field ) {
+		if ( ! is_array( $field ) || empty( $field['parent'] ) || ! function_exists( 'acf_get_field' ) ) {
+			return null;
+		}
+		$parent = acf_get_field( $field['parent'] );
+		if ( ! is_array( $parent ) || ( $parent['type'] ?? '' ) !== 'group' ) {
+			return null;
+		}
+		return $parent;
+	}
+
+	/**
+	 * Resolves the post meta key used to store a group sub-field value.
+	 *
+	 * @param array<string, mixed> $field ACF field array.
+	 * @return string|null
+	 */
+	private function get_group_sub_field_meta_key( $field ) {
+		$parent = $this->get_group_parent_field( $field );
+		if ( ! $parent || empty( $field['name'] ) || empty( $parent['name'] ) ) {
+			return null;
+		}
+		return $parent['name'] . '_' . $field['name'];
+	}
+
+	/**
+	 * Validates a repeater row meta key for a given sub-field.
+	 *
+	 * @param string $meta_key      Post meta key.
+	 * @param string $repeater_name Parent repeater field name.
+	 * @param string $sub_name      Sub-field name.
+	 * @return bool
+	 */
+	private function is_repeater_sub_field_meta_key( $meta_key, $repeater_name, $sub_name ) {
+		if ( ! is_string( $meta_key ) || $meta_key === '' || $meta_key[0] === '_' ) {
+			return false;
+		}
+		$pattern = '/^' . preg_quote( (string) $repeater_name, '/' ) . '_\d+_' . preg_quote( (string) $sub_name, '/' ) . '$/';
+		return (bool) preg_match( $pattern, $meta_key );
+	}
+
+	/**
+	 * Ensures encrypt flag and field type are read from the registered ACF field definition.
+	 *
+	 * @param array<string, mixed> $field ACF field array.
+	 * @return array<string, mixed>
+	 */
+	private function normalize_field_definition( $field ) {
+		if ( ! is_array( $field ) || ! function_exists( 'acf_get_field' ) ) {
+			return is_array( $field ) ? $field : array();
+		}
+
+		$registered = null;
+		if ( ! empty( $field['key'] ) ) {
+			$registered = acf_get_field( $field['key'] );
+		}
+		if ( ! is_array( $registered ) && ! empty( $field['name'] ) ) {
+			$registered = acf_get_field( $field['name'] );
+		}
+		if ( is_array( $registered ) ) {
+			if ( isset( $registered['acfenc_encrypt'] ) ) {
+				$field['acfenc_encrypt'] = $registered['acfenc_encrypt'];
+			}
+			if ( ! empty( $registered['type'] ) ) {
+				$field['type'] = $registered['type'];
+			}
+		}
+
+		return $field;
+	}
+
 	/** Soll ein Feld verschlüsselt werden? */
 	private function should_encrypt( $field ) {
+		$field = $this->normalize_field_definition( $field );
 		$flag = ! empty( $field['acfenc_encrypt'] );
 		return (bool) apply_filters( 'acfenc/should_encrypt', $flag, $field );
 	}
@@ -127,15 +268,99 @@ final class ACF_Encrypted_Fields {
 	}
 
 	private function to_string( $value ) {
+		return $this->value_to_storage_string( $value );
+	}
+
+	/**
+	 * Converts a field value to the plaintext string stored inside ENCv1 payloads.
+	 *
+	 * Checkbox values are always JSON arrays (never PHP-serialized) for reliable decryption.
+	 *
+	 * @param mixed $value Raw field value.
+	 * @return string
+	 */
+	private function value_to_storage_string( $value ) {
 		if ( is_array( $value ) || is_object( $value ) ) {
-			return json_encode( $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+			return (string) json_encode( $value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+		}
+		if ( is_string( $value ) && function_exists( 'is_serialized' ) && is_serialized( $value ) ) {
+			$unserialized = maybe_unserialize( $value );
+			if ( is_array( $unserialized ) ) {
+				return (string) json_encode( $unserialized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+			}
 		}
 		return (string) $value;
 	}
 
-	private function from_string( $raw ) {
+	private function from_string( $raw, $field = array() ) {
+		if ( ! is_string( $raw ) ) {
+			return $raw;
+		}
+
 		$decoded = json_decode( $raw, true );
-		return ( json_last_error() === JSON_ERROR_NONE ) ? $decoded : $raw;
+		if ( json_last_error() === JSON_ERROR_NONE ) {
+			return $this->coerce_decrypted_value( $decoded, $field );
+		}
+
+		if ( function_exists( 'is_serialized' ) && is_serialized( $raw ) ) {
+			$unserialized = maybe_unserialize( $raw );
+			if ( $unserialized !== false || $raw === 'b:0;' ) {
+				return $this->coerce_decrypted_value( $unserialized, $field );
+			}
+		}
+
+		return $this->coerce_decrypted_value( $raw, $field );
+	}
+
+	/**
+	 * Normalizes decrypted values to the type ACF expects per field.
+	 *
+	 * @param mixed                $value Decrypted value.
+	 * @param array<string, mixed> $field ACF field array.
+	 * @return mixed
+	 */
+	private function coerce_decrypted_value( $value, $field ) {
+		$field = $this->normalize_field_definition( $field );
+		$type  = isset( $field['type'] ) ? (string) $field['type'] : '';
+
+		if ( $type === 'checkbox' ) {
+			if ( ! is_array( $value ) ) {
+				if ( is_string( $value ) && $value !== '' && ! $this->is_encrypted( $value ) ) {
+					return array( $value );
+				}
+				return array();
+			}
+
+			$clean = array();
+			foreach ( $value as $item ) {
+				if ( ! is_string( $item ) || $item === '' || $this->is_encrypted( $item ) ) {
+					continue;
+				}
+				$clean[] = $item;
+			}
+
+			return array_values( array_unique( $clean ) );
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Decrypts an ENCv1 payload and returns a value typed for the given ACF field.
+	 *
+	 * @param string               $encrypted ENCv1 string.
+	 * @param array<string, mixed> $field     ACF field array.
+	 * @return mixed
+	 */
+	private function decrypt_for_field( $encrypted, $field ) {
+		if ( ! is_string( $encrypted ) || ! $this->is_encrypted( $encrypted ) ) {
+			return $encrypted;
+		}
+		$pt = $this->decrypt_string( $encrypted );
+		if ( ! is_string( $pt ) || $this->is_encrypted( $pt ) ) {
+			return $this->coerce_decrypted_value( $encrypted, $field );
+		}
+		return $this->from_string( $pt, $field );
 	}
 
 	/** AES-256-GCM Verschlüsselung */
@@ -189,39 +414,59 @@ final class ACF_Encrypted_Fields {
 	public function decrypt_value( $value ) {
 		if ( is_string( $value ) && $this->is_encrypted( $value ) ) {
 			$pt = $this->decrypt_string( $value );
-			return $this->from_string( (string) $pt );
+			return $this->from_string( (string) $pt, array() );
 		}
 		return $value;
 	}
 
+	/**
+	 * Public decrypt helper with field-aware coercion (checkbox arrays, etc.).
+	 *
+	 * @param mixed                $value Field value (possibly ENCv1).
+	 * @param array<string, mixed> $field ACF field array.
+	 * @return mixed
+	 */
+	public function decrypt_value_for_field( $value, $field ) {
+		$field = $this->normalize_field_definition( $field );
+		if ( is_string( $value ) && $this->is_encrypted( $value ) ) {
+			return $this->decrypt_for_field( $value, $field );
+		}
+		return $this->coerce_decrypted_value( $value, $field );
+	}
+
 	public function filter_update_value( $value, $post_id, $field ) {
+		$field = $this->normalize_field_definition( $field );
 		if ( ! $this->should_encrypt( $field ) ) {
 			return $value;
 		}
 		if ( is_string( $value ) && $this->is_encrypted( $value ) ) {
 			return $value;
 		}
-		$raw = $this->to_string( $value );
+		if ( ( $field['type'] ?? '' ) === 'checkbox' && is_array( $value ) ) {
+			$value = $this->coerce_decrypted_value( $value, $field );
+		}
+		$raw = $this->value_to_storage_string( $value );
 		$enc = $this->encrypt_string( $raw );
 		return ( $enc === false ) ? $value : $enc;
 	}
 
 	public function filter_load_value( $value, $post_id, $field ) {
+		$field = $this->normalize_field_definition( $field );
 		if ( ! $this->should_encrypt( $field ) ) {
 			return $value;
 		}
 		if ( is_string( $value ) && $this->is_encrypted( $value ) ) {
-			$pt = $this->decrypt_string( $value );
-			return $this->from_string( (string) $pt );
+			return $this->decrypt_for_field( $value, $field );
 		}
-		return $value;
+		return $this->coerce_decrypted_value( $value, $field );
 	}
 
 	public function filter_format_value( $value, $post_id, $field ) {
+		$field = $this->normalize_field_definition( $field );
 		if ( ! $this->should_encrypt( $field ) ) {
 			return $value;
 		}
-		return $this->decrypt_value( $value );
+		return $this->decrypt_value_for_field( $value, $field );
 	}
 
 	/** WP-CLI: Migration bestehender Daten */
@@ -239,6 +484,7 @@ final class ACF_Encrypted_Fields {
 			\WP_CLI::error( 'Bitte --field_key=FIELD_KEY oder --field_name=FIELD_NAME angeben.' );
 		}
 
+		$field = null;
 		if ( $field_key ) {
 			$field = acf_get_field( $field_key );
 			if ( ! $field ) {
@@ -247,10 +493,22 @@ final class ACF_Encrypted_Fields {
 			$field_name = $field['name'];
 		}
 
+		if ( is_array( $field ) && $this->field_is_repeater_sub_field( $field ) ) {
+			$this->cli_migrate_repeater_sub_field( $field, $post_type );
+			return;
+		}
+
+		if ( is_array( $field ) && $this->field_is_group_sub_field( $field ) ) {
+			$group_meta_key = $this->get_group_sub_field_meta_key( $field );
+			if ( $group_meta_key ) {
+				$field_name = $group_meta_key;
+			}
+		}
+
 		\WP_CLI::log( "Verschlüssele bestehende Werte für Meta-Key '{$field_name}' (Post Type: {$post_type}) ..." );
 
-		$paged  = 1;
-		$count  = 0;
+		$paged   = 1;
+		$count   = 0;
 		$updated = 0;
 		do {
 			$q = new \WP_Query( array(
@@ -271,18 +529,14 @@ final class ACF_Encrypted_Fields {
 			$ids = $q->posts;
 			foreach ( $ids as $pid ) {
 				$current = get_post_meta( $pid, $field_name, true );
-				if ( ! is_string( $current ) || $this->is_encrypted( $current ) ) {
+				if ( ! is_string( $current ) || $current === '' || $this->is_encrypted( $current ) ) {
 					$count++;
 					continue;
 				}
 
-				$enc = $this->encrypt_string( $this->to_string( $current ) );
+				$enc = $this->encrypt_string( $this->value_to_storage_string( $current ) );
 				if ( $enc !== false ) {
-					if ( ! empty( $field_key ) ) {
-						update_field( $field_key, $enc, $pid );
-					} else {
-						update_post_meta( $pid, $field_name, $enc );
-					}
+					update_post_meta( $pid, $field_name, $enc );
 					$updated++;
 				}
 				$count++;
@@ -290,6 +544,77 @@ final class ACF_Encrypted_Fields {
 
 			$paged++;
 		} while ( ! empty( $ids ) );
+
+		\WP_CLI::success( "Fertig. Gesehen: {$count}, aktualisiert: {$updated}." );
+	}
+
+	/**
+	 * WP-CLI: Encrypt existing values for all rows of a repeater sub-field.
+	 *
+	 * @param array<string, mixed> $field     Repeater sub-field definition.
+	 * @param string               $post_type Post type slug.
+	 * @return void
+	 */
+	private function cli_migrate_repeater_sub_field( $field, $post_type ) {
+		$parent = $this->get_repeater_parent_field( $field );
+		if ( ! $parent || empty( $parent['name'] ) || empty( $field['name'] ) ) {
+			\WP_CLI::error( 'Repeater-Parent für Subfeld nicht gefunden.' );
+		}
+
+		$repeater_name = (string) $parent['name'];
+		$sub_name      = (string) $field['name'];
+
+		\WP_CLI::log( "Verschlüssele Repeater-Subfeld '{$repeater_name}_*_{$sub_name}' (Post Type: {$post_type}) ..." );
+
+		global $wpdb;
+
+		$like = $wpdb->esc_like( $repeater_name . '_' ) . '%' . $wpdb->esc_like( '_' . $sub_name );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT pm.post_id, pm.meta_id, pm.meta_key, pm.meta_value
+				FROM {$wpdb->postmeta} pm
+				INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+				WHERE p.post_type = %s
+				AND pm.meta_key LIKE %s
+				AND LEFT(pm.meta_key, 1) != %s",
+				$post_type,
+				$like,
+				'_'
+			),
+			ARRAY_A
+		);
+
+		if ( ! is_array( $rows ) ) {
+			\WP_CLI::error( 'Datenbankabfrage fehlgeschlagen.' );
+		}
+
+		$count   = 0;
+		$updated = 0;
+		foreach ( $rows as $row ) {
+			$meta_key = isset( $row['meta_key'] ) ? (string) $row['meta_key'] : '';
+			if ( ! $this->is_repeater_sub_field_meta_key( $meta_key, $repeater_name, $sub_name ) ) {
+				continue;
+			}
+
+			$count++;
+			$current = isset( $row['meta_value'] ) ? $row['meta_value'] : '';
+			if ( ! is_string( $current ) || $current === '' || $this->is_encrypted( $current ) ) {
+				continue;
+			}
+
+			$enc = $this->encrypt_string( $this->value_to_storage_string( $current ) );
+			if ( $enc === false ) {
+				continue;
+			}
+
+			$post_id = isset( $row['post_id'] ) ? (int) $row['post_id'] : 0;
+			if ( $post_id > 0 ) {
+				update_post_meta( $post_id, $meta_key, $enc );
+				$updated++;
+			}
+		}
 
 		\WP_CLI::success( "Fertig. Gesehen: {$count}, aktualisiert: {$updated}." );
 	}

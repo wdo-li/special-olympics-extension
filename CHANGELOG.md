@@ -2,6 +2,225 @@
 
 All notable changes to this plugin are documented in this file.
 
+## 1.5.18 - 2026-07-03
+
+### Changed
+- ACF Mitglied: added `vegan` option to **Ernährung Besonderheiten** checkbox field.
+
+## 1.5.17 - 2026-07-03
+
+### Fixed
+- Medication consent fields: show ACF required asterisk (`*`) when revealed via JS after entering medications (not only on initial PHP render).
+
+## 1.5.16 - 2026-07-03
+
+### Changed
+- Medication consent: centralize validation in `acf/validate_save_post`, skip autosave/revisions, localize field keys to admin JS from PHP.
+
+## 1.5.15 - 2026-07-03
+
+### Fixed
+- Medication consent save/validation: resolve post ID from `$_POST['post_ID']` during save, validate via `acf/validate_save_post` when consent is unchecked/missing, stop JS from clearing saved consent on initial load, and avoid ACF `hide()` so values submit correctly.
+
+## 1.5.14 - 2026-07-03
+
+### Fixed
+- Medication consent fields: use `soe-medication-consent-hidden` with admin CSS (`display:none`) instead of ACF `acf-hidden`, which has no hide rule for regular fields; JS now toggles via `data-key` DOM selectors; script loads on `acf/input/admin_enqueue_scripts`.
+
+## 1.5.13 - 2026-07-03
+
+### Fixed
+- Medication consent fields: hide correctly when repeaters are empty (bind after consent field init, DOM-based row check, default `acf-hidden` in field wrapper).
+
+## 1.5.12 - 2026-07-03
+
+### Added
+- Medication consent fields (`zustimmung_medikamentenabgabe`, `zustimmung_notfallmedikamentenabgabe`): show/hide via admin JS when the related repeater has data; server-side `acf/prepare_field` and `acf/validate_value` enforce consent only when medications are listed.
+
+### Changed
+- ACF export (Mitglied): removed non-functional conditional logic on medication consent fields (ACF cannot condition parent fields on repeater sub-fields).
+
+## 1.5.11 - 2026-07-02
+
+### Changed
+- Staging banner: removed text label; bar is now a 5px orange strip (login and admin). Admin bar badge "Testumgebung" unchanged.
+
+## 1.5.10 - 2026-07-02
+
+### Changed
+- Staging indicator accepts multiple hosts (comma-separated, e.g. `staging.specialolympics.li, localhost, localhost:8080`) and matches the current `HTTP_HOST` against all configured entries.
+
+## 1.5.9 - 2026-07-02
+
+### Changed
+- Staging indicator host is configurable under Settings → General → Staging-Host (hostname or URL; empty disables the indicator).
+
+## 1.5.8 - 2026-07-02
+
+### Added
+- Staging indicator on `staging.specialolympics.li`: orange favicon, admin/login banner, and admin bar badge (URL-based; no frontend).
+
+## 1.5.7 - 2026-07-02
+
+### Fixed
+- Event payroll: use member HL-Stufe (1A/1B) when resolving hourly rates for Hauptleiter*in, same as trainings (previously always used 1B).
+
+## 1.5.6 - 2026-07-02
+
+### Changed
+- Payroll settings duration UI: compact tier list plus dropdown to edit hourly rates for one stage at a time (less vertical space).
+
+## 1.5.5 - 2026-07-02
+
+### Changed
+- Duration tiers and payroll hourly rates: unified settings UI on the Lohnabrechnung tab with add/remove buttons, auto-generated keys, and per-tier role rate tables (no manual key|label textareas or legacy duration mapping).
+
+## 1.5.4 - 2026-07-02
+
+### Changed
+- Duration keys and hourly rate matrix are fully configurable in settings (no hardcoded rate suffix list). Stundensatz-Zeilen use `key|Label` format; CHF amounts are edited per defined row. Missing role/duration combinations still yield CHF 0 in payroll.
+
+## 1.5.3 - 2026-07-02
+
+### Changed
+- Duration options: separate stable key (stored value, payroll mapping) from display label (`key|Label` format in settings). Event and training dropdowns save keys; lists, exports, and payroll show labels. Legacy duration text values remain supported for payroll rate lookup.
+
+## 1.5.2 - 2026-07-01
+
+### Changed
+- Telefonbuch „Alle Daten“: PDF download icon moved into the Detail column (separate PDF column removed); icon styled like the edit pencil (gray, no underline).
+
+## 1.5.1 - 2026-07-01
+
+### Changed
+- Telefonbuch member PDF: two-column field layout for compact sections; export header shows exporter name and timestamp; remarks field no longer renders raw HTML tags.
+
+## 1.5.0 - 2026-07-01
+
+### Added
+- Telefonbuch „Alle Daten“: per-member PDF export (full member datasheet) via PDF icon column; streams download without server storage; same `view_telefonbuch` scope as Excel; bank/IBAN only for administrators.
+
+## 1.4.4 - 2026-07-01
+
+### Changed
+- Telefonbuch Notfall cards: medication entries (Notfallmedikamente, Medikamentangaben) listed one per line instead of semicolon-separated.
+
+## 1.4.3 - 2026-07-01
+
+### Added
+- Telefonbuch Notfall cards: collapsible toggle — only member name shown by default; click to expand full emergency details.
+
+## 1.4.2 - 2026-07-01
+
+### Changed
+- Telefonbuch Notfall cards: section titles on their own line, content listed below (no trailing colon on titles).
+
+## 1.4.1 - 2026-07-01
+
+### Changed
+- Telefonbuch Notfall cards: allergies use orange highlight; diagnosis uses forms icon; all sections use consistent icon-left / content-right layout.
+
+## 1.4.0 - 2026-07-01
+
+### Added
+- Telefonbuch Notfall cards: allergies (highlighted), diagnosis (Hauptdiagnose, Nebendiagnosen), Trisomie 21 (with HWS/pathology emphasis), and Hausarzt contact; extended card search across medical content.
+
+## 1.3.99 - 2026-07-01
+
+### Added
+- Telefonbuch „Alle Daten“: Stammdaten (Geburtsdatum, Geschlecht, Staatsbürgerschaft, Land, PEID-Nr.), Diagnose (Hauptdiagnose, Nebendiagnosen, Psychische Leiden), Trisomie 21, and Gewohnheiten in detail panel, full-text search, and Excel export.
+
+### Fixed
+- Telefonbuch Excel export: ACF checkbox fields (Ernährung Besonderheiten, Nebendiagnosen, Hilfsmittel) now export human-readable comma-separated labels instead of empty cells.
+
+## 1.3.98 - 2026-07-01
+
+### Fixed
+- ACF encrypted checkboxes: decrypt now runs before the global checkbox value normalizer (`soe_acf_checkbox_load_value_normalize`), which previously wrapped `ENCv1:` strings into arrays and caused empty or corrupted checkbox UI and failed saves.
+
+## 1.3.97 - 2026-07-01
+
+### Fixed
+- ACF encrypted checkbox fields (and group sub-fields such as `nebendiagnosen`): decrypt now returns proper PHP arrays instead of raw `ENCv1:` strings or PHP-serialized blobs, fixing empty or corrupted checkbox UI after save.
+
+## 1.3.96 - 2026-07-01
+
+### Changed
+- ACF member field group (JSON): enabled database encryption (`acfenc_encrypt`) for medical and related sensitive fields — allergies, nutrition, care notes, diagnoses (group sub-fields), Trisomie 21 (group sub-fields), assistive-device checkboxes, insurance ID numbers, and general remarks.
+
+## 1.3.95 - 2026-07-01
+
+### Added
+- ACF encryption: repeater sub-fields (`medikamentangaben`, `notfallmedikamente` medication name/dose columns) can be encrypted per cell; WP-CLI `wp acfenc` auto-detects repeater sub-fields via `--field_key` and migrates indexed meta keys (`repeater_0_subfield`).
+
+### Changed
+- ACF encryption CLI: group sub-fields resolve to prefixed meta keys (`group_subfield`) when `--field_key` is used.
+
+## 1.3.94 - 2026-06-23
+
+### Fixed
+
+- ACF field tooltips: JavaScript blendet das Instruktions-Element nun direkt per `style.display = 'none'` aus, da ACF je nach Kontext `.description` statt `.acf-instructions` rendert. CSS-Regel erweitert, um beide Klassen abzudecken.
+
+## 1.3.93 - 2026-06-23
+
+### Fixed
+
+- ACF field tooltips: CSS/JS-Ausgabe auf direkte `admin_head`/`admin_footer`-Hooks umgestellt, da `wp_add_inline_style('common', …)` auf manchen Admin-Screens nicht zuverlässig ausgeführt wird.
+
+## 1.3.92 - 2026-06-23
+
+### Changed
+
+- ACF field instructions on mitglied edit screens: **alle** Anweisungstexte werden einheitlich als `?`-Tooltip-Badge neben dem Feldlabel dargestellt — nicht mehr als statischer Text.
+
+## 1.3.91 - 2026-06-23
+
+### Changed
+
+- Role-dependent required fields: instruction text is now shown as a dezentes **„?"**-Tooltip-Badge neben dem Feldlabel, statt als statischer Hinweistext unter dem Label. CSS-only-Tooltip, kein externer JS-Overhead.
+
+## 1.3.90 - 2026-06-23
+
+### Fixed
+
+- Role-dependent required fields: `$field['name']` in `acf/prepare_field` callbacks contains the HTML input name (`acf[field_key]`) rather than the ACF field slug. Fixed by registering per-field closures via `soe_acf_make_role_required_callback()` that capture the correct rule key from the registry.
+
+## 1.3.89 - 2026-06-23
+
+### Fixed
+
+- Role-dependent required fields: rewrote hook registration to use `acf/prepare_field/name=…` per field (registered on `acf/init`); post ID resolved reliably via `global $post` and `$_REQUEST['post']` instead of complex ACF internal API calls that do not fire on admin edit screens.
+
+## 1.3.88 - 2026-06-23
+
+### Fixed
+
+- Fatal error on page load: removed duplicate `soe_mitglied_get_linked_user_id()` definition; role-required-field logic now uses the existing helper from `mitglied-capabilities.php`.
+
+## 1.3.87 - 2026-06-23
+
+### Fixed
+
+- Role-dependent required fields (e.g. **Telefonnummer**): required asterisk and validation now resolve correctly on mitglied edit screens by reading linked WP user roles and post meta directly instead of `get_field()` during `acf/prepare_field`.
+
+## 1.3.86 - 2026-06-23
+
+### Added
+
+- Central **role-dependent ACF required-field rules** (`soe_get_acf_role_required_field_rules`): extensible registry with `acf/prepare_field` and `acf/validate_value` integration for mitglied profiles.
+- **Telefonnummer** is required for all member roles except when the person is **only** Athlet*in; members with Athlet*in plus another role must provide a phone number. Ansprechpersonen see a hint that their number is used as emergency contact for athletes they manage.
+
+### Changed
+
+- Dashboard profile completeness no longer counts phone as missing for members who are only Athlet*in.
+
+## 1.3.85 - 2026-05-25
+
+### Added
+
+- New WordPress role **stiftungsrat**: members can view the SOE dashboard and edit their own linked member profile; no access to trainings, events, payroll, or other members' data.
+
 ## 1.3.84 - 2026-05-11
 
 ### Fixed

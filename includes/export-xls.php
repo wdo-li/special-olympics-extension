@@ -56,6 +56,91 @@ function soe_export_format_repeater( $value, $format = 'simple' ) {
 	return implode( SOE_EXPORT_REPEATER_SEP, array_filter( $rows ) );
 }
 
+/**
+ * Map ACF checkbox values to human-readable labels.
+ *
+ * @param mixed                $values  Selected value(s).
+ * @param array<string,string> $choices ACF choices map (value => label).
+ * @return string Comma-separated labels.
+ */
+function soe_format_checkbox_values_for_display( $values, $choices = array() ) {
+	if ( ! is_array( $values ) ) {
+		$values = ( $values !== '' && $values !== null ) ? array( $values ) : array();
+	}
+	$labels = array();
+	foreach ( $values as $val ) {
+		$val      = (string) $val;
+		$labels[] = isset( $choices[ $val ] ) ? (string) $choices[ $val ] : $val;
+	}
+	return implode( ', ', array_filter( $labels, 'strlen' ) );
+}
+
+/**
+ * Format ja/nein ACF values for display.
+ *
+ * @param mixed $value Raw field value.
+ * @return string
+ */
+function soe_format_ja_nein_value( $value ) {
+	if ( $value === 'ja' ) {
+		return __( 'Ja', 'special-olympics-extension' );
+	}
+	if ( $value === 'nein' ) {
+		return __( 'Nein', 'special-olympics-extension' );
+	}
+	return is_scalar( $value ) ? trim( (string) $value ) : '';
+}
+
+/**
+ * Resolve ACF checkbox choices for a top-level or group sub-field.
+ *
+ * @param int    $post_id    Member post ID.
+ * @param string $field_name Sub-field or field name.
+ * @param string $group_name Optional parent group field name.
+ * @return array<string,string>
+ */
+function soe_get_member_checkbox_choices( $post_id, $field_name, $group_name = '' ) {
+	$choices = array();
+	if ( $group_name !== '' ) {
+		$group_obj = get_field_object( $group_name, $post_id );
+		if ( is_array( $group_obj ) && ! empty( $group_obj['sub_fields'] ) ) {
+			foreach ( $group_obj['sub_fields'] as $sub ) {
+				if ( isset( $sub['name'] ) && $sub['name'] === $field_name && ! empty( $sub['choices'] ) && is_array( $sub['choices'] ) ) {
+					return $sub['choices'];
+				}
+			}
+		}
+		return $choices;
+	}
+	$field_obj = get_field_object( $field_name, $post_id );
+	if ( is_array( $field_obj ) && ! empty( $field_obj['choices'] ) && is_array( $field_obj['choices'] ) ) {
+		return $field_obj['choices'];
+	}
+	return $choices;
+}
+
+/**
+ * Format a member checkbox field (top-level or group sub-field) for export/display.
+ *
+ * @param int    $post_id    Member post ID.
+ * @param string $field_name Field name.
+ * @param string $group_name Optional parent group field name.
+ * @return string
+ */
+function soe_format_member_checkbox_field( $post_id, $field_name, $group_name = '' ) {
+	$value = array();
+	if ( $group_name !== '' ) {
+		$group_val = get_field( $group_name, $post_id );
+		if ( is_array( $group_val ) && isset( $group_val[ $field_name ] ) ) {
+			$value = $group_val[ $field_name ];
+		}
+	} else {
+		$value = get_field( $field_name, $post_id );
+	}
+	$choices = soe_get_member_checkbox_choices( $post_id, $field_name, $group_name );
+	return soe_format_checkbox_values_for_display( $value, $choices );
+}
+
 add_action( 'admin_post_soe_export_telefonbuch', 'soe_export_xls_telefonbuch_handler' );
 function soe_export_xls_telefonbuch_handler() {
 	if ( ! current_user_can( 'view_telefonbuch' ) ) {
@@ -121,16 +206,19 @@ function soe_export_xls_telefonbuch( $member_ids = null ) {
 	);
 
 	$cols = array(
-		'Nachname', 'Vorname', 'Rolle', 'Telefon', 'E-Mail', 'Strasse', 'Hausnr.', 'PLZ', 'Ort',
+		'Nachname', 'Vorname', 'Rolle', 'Geburtsdatum', 'Geschlecht', 'Staatsbürgerschaft', 'Land', 'PEID-Nr.',
+		'Telefon', 'E-Mail', 'Strasse', 'Hausnr.', 'PLZ', 'Ort',
 		'Sportart', 'Kleidergrösse', 'Schuhgrösse',
 		'Notfallkontakt', 'Notfallkontakt Tel.',
 		'Weitere Kontakte', 'Notfallmedikamente', 'Medikamentangaben',
+		'Hauptdiagnose', 'Nebendiagnosen', 'Psychische Leiden',
+		'Trisomie 21 betroffen', 'Röntgenbilder HWS', 'Pathologisch (instabil)', 'Röntgen-Resultat',
 		'Krankenkasse', 'KK-ID', 'Unfallversicherung', 'UV-ID',
 		'Hausarzt', 'Hausarzt Tel.', 'Zahnarzt', 'Zahnarzt Tel.',
 		'Allergien Med.', 'Allergien Lebensm.', 'Andere Allergien',
 		'Ernährung Besonderheiten', 'Ernährung Weitere',
 		'Bemerkungen', 'Erforderliche Hilfsmittel', 'Unterstützung bei', 'Andere Hilfsmittel',
-		'Pflege/Betreuung', 'Sprache/Kommunikation', 'Verhaltensauffälligkeiten', 'Vorlieben/Ängste',
+		'Pflege/Betreuung', 'Sprache/Kommunikation', 'Verhaltensauffälligkeiten', 'Vorlieben/Ängste', 'Gewohnheiten',
 		'Medizin. Datenblätter',
 	);
 	$export_bank = current_user_can( 'manage_options' );
@@ -206,10 +294,20 @@ function soe_export_xls_telefonbuch( $member_ids = null ) {
 			$medik_str = implode( SOE_EXPORT_REPEATER_SEP, array_filter( $parts ) );
 		}
 
-		$hilfs = get_field( 'erforderliche_hilfsmittel', $m->ID );
-		$hilfs_str = is_array( $hilfs ) ? implode( SOE_EXPORT_REPEATER_SEP, array_map( 'trim', array_filter( (array) $hilfs ) ) ) : ( is_scalar( $hilfs ) ? (string) $hilfs : '' );
-		$unterst = get_field( 'unterstutzung_bei', $m->ID );
-		$unterst_str = is_array( $unterst ) ? implode( SOE_EXPORT_REPEATER_SEP, array_map( 'trim', array_filter( (array) $unterst ) ) ) : ( is_scalar( $unterst ) ? (string) $unterst : '' );
+		$hilfs_str   = soe_format_member_checkbox_field( $m->ID, 'erforderliche_hilfsmittel' );
+		$unterst_str = soe_format_member_checkbox_field( $m->ID, 'unterstutzung_bei' );
+		$ernaehrung_bes_str = soe_format_member_checkbox_field( $m->ID, 'ernahrung_besonderheiten' );
+
+		$diagnose_export = get_field( 'diagnose', $m->ID );
+		$hauptdiagnose_export = is_array( $diagnose_export ) && isset( $diagnose_export['hauptdiagnose'] ) ? $diagnose_export['hauptdiagnose'] : '';
+		$psychische_leiden_export = is_array( $diagnose_export ) && isset( $diagnose_export['psychische_leiden'] ) ? $diagnose_export['psychische_leiden'] : '';
+		$nebendiagnosen_export = soe_format_member_checkbox_field( $m->ID, 'nebendiagnosen', 'diagnose' );
+
+		$trisomie_export = get_field( 'trisomie_21', $m->ID );
+		$tri_betroffen_export = is_array( $trisomie_export ) && isset( $trisomie_export['trisomie_21_betroffen'] ) ? $trisomie_export['trisomie_21_betroffen'] : '';
+		$tri_roentgen_export = is_array( $trisomie_export ) && isset( $trisomie_export['roentgenbilder_hws'] ) ? $trisomie_export['roentgenbilder_hws'] : '';
+		$tri_pathological_export = is_array( $trisomie_export ) && isset( $trisomie_export['xray_pathological'] ) ? $trisomie_export['xray_pathological'] : '';
+		$tri_result_export = is_array( $trisomie_export ) && isset( $trisomie_export['xray_result'] ) ? $trisomie_export['xray_result'] : '';
 
 		$datenblatter = get_field( 'medizinische_datenblatter', $m->ID );
 		$daten_str = '';
@@ -254,19 +352,31 @@ function soe_export_xls_telefonbuch( $member_ids = null ) {
 		$bank_iban_x = is_array( $bank_export ) && isset( $bank_export['bank_iban'] ) ? $bank_export['bank_iban'] : '';
 
 		$data = array(
-			$nachname, $vorname, $role_str, $tel, $email, $strasse, $hausnummer, $plz, $ort,
+			$nachname, $vorname, $role_str,
+			get_field( 'geburtsdatum', $m->ID ),
+			get_field( 'geschlecht', $m->ID ),
+			get_field( 'staatsburgerschaft', $m->ID ),
+			get_field( 'land', $m->ID ),
+			get_field( 'peid_nr', $m->ID ),
+			$tel, $email, $strasse, $hausnummer, $plz, $ort,
 			$sport_str, $kleider, $schuh,
 			$name_notfall, $tel_notfall,
 			$weitere_str, $notfallmed_str, $medik_str,
+			$hauptdiagnose_export, $nebendiagnosen_export, $psychische_leiden_export,
+			soe_format_ja_nein_value( $tri_betroffen_export ),
+			soe_format_ja_nein_value( $tri_roentgen_export ),
+			soe_format_ja_nein_value( $tri_pathological_export ),
+			$tri_result_export,
 			get_field( 'krankenkasse_name_&_ort', $m->ID ), get_field( 'krankenkasse_idnr', $m->ID ),
 			get_field( 'unfallversicherung_name_&_ort', $m->ID ), get_field( 'unfallversicherung_idnr', $m->ID ),
 			get_field( 'hausarzt_name', $m->ID ), get_field( 'hausarzt_name_telnr', $m->ID ),
 			get_field( 'zahnarzt_name', $m->ID ), get_field( 'zahnarzt_telnr', $m->ID ),
 			get_field( 'allergien_auf_medikamente', $m->ID ), get_field( 'allergien_auf_lebensmittel', $m->ID ), get_field( 'andere_allergien', $m->ID ),
-			get_field( 'ernahrung_besonderheiten', $m->ID ), get_field( 'ernahrung_weitere_informationen', $m->ID ),
+			$ernaehrung_bes_str, get_field( 'ernahrung_weitere_informationen', $m->ID ),
 			get_field( 'bemerkungen', $m->ID ), $hilfs_str, $unterst_str, get_field( 'andere_hilfsmittel', $m->ID ),
 			get_field( 'pflegebetreuung', $m->ID ), get_field( 'sprachekommunikation', $m->ID ),
 			get_field( 'verhaltenauffalligkeiten', $m->ID ), get_field( 'vorliebenangste', $m->ID ),
+			get_field( 'gewohnheiten', $m->ID ),
 			$daten_str,
 		);
 		if ( $export_bank ) {
@@ -428,7 +538,7 @@ function soe_export_xls_payroll( $payroll_id ) {
 		$sheet->setCellValue( 'A' . $row, $r['sport'] ?? '' );
 		$sheet->setCellValue( 'B' . $row, $r['notes'] ?? '' );
 		$sheet->setCellValue( 'C' . $row, is_callable( $qual_label_fn ) ? call_user_func( $qual_label_fn, $r['qualification'] ?? '' ) : ( $r['qualification'] ?? '' ) );
-		$sheet->setCellValue( 'D' . $row, $r['duration'] ?? '' );
+		$sheet->setCellValue( 'D' . $row, soe_get_duration_label( $r['duration'] ?? '' ) );
 		$sheet->setCellValue( 'E' . $row, $r['ref_no'] ?? '' );
 		$sheet->setCellValue( 'F' . $row, (int) ( $r['quantity'] ?? 0 ) );
 		$sheet->setCellValue( 'G' . $row, $r['chf_per_hour'] ?? '' );
@@ -448,7 +558,7 @@ function soe_export_xls_payroll( $payroll_id ) {
 		$sheet->setCellValue( 'A' . $row, $event_label );
 		$sheet->setCellValue( 'B' . $row, $r['notes'] ?? '' );
 		$sheet->setCellValue( 'C' . $row, is_callable( $qual_label_fn ) ? call_user_func( $qual_label_fn, $r['qualification'] ?? '' ) : ( $r['qualification'] ?? '' ) );
-		$sheet->setCellValue( 'D' . $row, $r['duration'] ?? '' );
+		$sheet->setCellValue( 'D' . $row, soe_get_duration_label( $r['duration'] ?? '' ) );
 		$sheet->setCellValue( 'E' . $row, $r['ref_no'] ?? '' );
 		$sheet->setCellValue( 'F' . $row, (int) ( $r['quantity'] ?? 0 ) );
 		$sheet->setCellValue( 'G' . $row, $r['chf_per_hour'] ?? '' );

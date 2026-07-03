@@ -608,7 +608,7 @@ function soe_render_training_form() {
 											<select id="duration" name="duration" <?php disabled( $readonly ); ?>>
 												<option value="">— <?php esc_html_e( 'Auswählen', 'special-olympics-extension' ); ?> —</option>
 												<?php foreach ( $duration_opts as $d ) : ?>
-													<option value="<?php echo esc_attr( $d ); ?>" <?php selected( $training['duration'] ?? '', $d ); ?>><?php echo esc_html( $d ); ?></option>
+													<option value="<?php echo esc_attr( $d['key'] ); ?>" <?php selected( $training['duration'] ?? '', $d['key'] ); ?>><?php echo esc_html( $d['label'] ); ?></option>
 												<?php endforeach; ?>
 											</select>
 										</td>

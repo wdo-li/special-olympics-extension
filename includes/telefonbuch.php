@@ -458,7 +458,7 @@ function soe_render_telefonbuch_page() {
 			<div class="soe-telefonbuch-notfall-filters" style="margin-bottom:1rem; display:flex; flex-wrap:wrap; gap:1rem; align-items:center;">
 				<div>
 					<label for="soe-notfall-search"><?php esc_html_e( 'Suchen', 'special-olympics-extension' ); ?>:</label>
-					<input type="text" id="soe-notfall-search" class="regular-text" placeholder="<?php esc_attr_e( 'Name eingeben…', 'special-olympics-extension' ); ?>" />
+					<input type="text" id="soe-notfall-search" class="regular-text" placeholder="<?php esc_attr_e( 'Name, Allergie, Diagnose…', 'special-olympics-extension' ); ?>" />
 				</div>
 				<div>
 					<label for="soe-notfall-sport"><?php esc_html_e( 'Sportart', 'special-olympics-extension' ); ?>:</label>
@@ -489,62 +489,224 @@ function soe_render_telefonbuch_page() {
 					$notfallmed = get_field( 'notfallmedikamente', $m->ID );
 					$medikamentangaben = get_field( 'medikamentangaben', $m->ID );
 					$datenblatter = get_field( 'medizinische_datenblatter', $m->ID );
+					$allergien_med    = get_field( 'allergien_auf_medikamente', $m->ID );
+					$allergien_lebens = get_field( 'allergien_auf_lebensmittel', $m->ID );
+					$allergien_andere = get_field( 'andere_allergien', $m->ID );
+					$hausarzt         = get_field( 'hausarzt_name', $m->ID );
+					$hausarzt_tel     = get_field( 'hausarzt_name_telnr', $m->ID );
+					$diagnose_nf      = get_field( 'diagnose', $m->ID );
+					$hauptdiagnose_nf = is_array( $diagnose_nf ) && isset( $diagnose_nf['hauptdiagnose'] ) ? trim( (string) $diagnose_nf['hauptdiagnose'] ) : '';
+					$nebendiagnosen_nf = function_exists( 'soe_format_member_checkbox_field' ) ? soe_format_member_checkbox_field( $m->ID, 'nebendiagnosen', 'diagnose' ) : '';
+					$trisomie_nf      = get_field( 'trisomie_21', $m->ID );
+					$tri_betroffen_nf = is_array( $trisomie_nf ) && isset( $trisomie_nf['trisomie_21_betroffen'] ) ? (string) $trisomie_nf['trisomie_21_betroffen'] : '';
+					$tri_roentgen_nf  = is_array( $trisomie_nf ) && isset( $trisomie_nf['roentgenbilder_hws'] ) ? (string) $trisomie_nf['roentgenbilder_hws'] : '';
+					$tri_path_nf      = is_array( $trisomie_nf ) && isset( $trisomie_nf['xray_pathological'] ) ? (string) $trisomie_nf['xray_pathological'] : '';
+					$tri_result_nf    = is_array( $trisomie_nf ) && isset( $trisomie_nf['xray_result'] ) ? trim( (string) $trisomie_nf['xray_result'] ) : '';
+					$tri_betroffen_ja = ( $tri_betroffen_nf === 'ja' );
+					$has_allergien_nf = ( is_string( $allergien_med ) && trim( $allergien_med ) !== '' )
+						|| ( is_string( $allergien_lebens ) && trim( $allergien_lebens ) !== '' )
+						|| ( is_string( $allergien_andere ) && trim( $allergien_andere ) !== '' );
+					$has_diagnose_nf = $hauptdiagnose_nf !== '' || $nebendiagnosen_nf !== '';
+					$has_trisomie_nf = $tri_betroffen_nf !== '' || $tri_roentgen_nf !== '' || $tri_path_nf !== '' || $tri_result_nf !== '';
+					$has_hausarzt_nf = ( is_string( $hausarzt ) && trim( $hausarzt ) !== '' ) || ( is_string( $hausarzt_tel ) && trim( $hausarzt_tel ) !== '' );
 					$sport_terms_m = wp_get_object_terms( $m->ID, 'sport' );
 					$sport_names_m = is_array( $sport_terms_m ) ? wp_list_pluck( $sport_terms_m, 'name' ) : array();
 					$sport_data = implode( ', ', $sport_names_m );
+					$notfall_search_parts = array(
+						$vorname, $nachname, $strasse, $hausnummer, $plz, $ort, $sport_data,
+						$name_notfall, $tel_notfall,
+						$allergien_med, $allergien_lebens, $allergien_andere,
+						$hauptdiagnose_nf, $nebendiagnosen_nf,
+						$hausarzt, $hausarzt_tel,
+					);
+					if ( function_exists( 'soe_format_ja_nein_value' ) ) {
+						$notfall_search_parts[] = soe_format_ja_nein_value( $tri_betroffen_nf );
+						$notfall_search_parts[] = soe_format_ja_nein_value( $tri_roentgen_nf );
+						$notfall_search_parts[] = soe_format_ja_nein_value( $tri_path_nf );
+					} else {
+						$notfall_search_parts[] = $tri_betroffen_nf;
+						$notfall_search_parts[] = $tri_roentgen_nf;
+						$notfall_search_parts[] = $tri_path_nf;
+					}
+					$notfall_search_parts[] = $tri_result_nf;
+					if ( is_array( $notfallmed ) ) {
+						foreach ( $notfallmed as $med ) {
+							$notfall_search_parts[] = isset( $med['name_medikament_notfall'] ) ? $med['name_medikament_notfall'] : '';
+							$notfall_search_parts[] = isset( $med['dosis_medikament_notfall'] ) ? $med['dosis_medikament_notfall'] : '';
+						}
+					}
+					if ( is_array( $medikamentangaben ) ) {
+						foreach ( $medikamentangaben as $med ) {
+							$notfall_search_parts[] = isset( $med['name_medikament'] ) ? $med['name_medikament'] : '';
+							$notfall_search_parts[] = isset( $med['dosis_medikament'] ) ? $med['dosis_medikament'] : '';
+						}
+					}
+					if ( is_array( $weitere ) ) {
+						foreach ( $weitere as $k ) {
+							$notfall_search_parts[] = isset( $k['funktion'] ) ? $k['funktion'] : '';
+							$notfall_search_parts[] = isset( $k['vorname'] ) ? $k['vorname'] : '';
+							$notfall_search_parts[] = isset( $k['nachname'] ) ? $k['nachname'] : '';
+							$notfall_search_parts[] = isset( $k['telefon'] ) ? $k['telefon'] : '';
+						}
+					}
+					$notfall_search_flat = array_filter( array_map( function ( $v ) {
+						return is_string( $v ) ? trim( $v ) : '';
+					}, $notfall_search_parts ) );
+					$notfall_search_text = strtolower( implode( ' ', array_map( 'wp_strip_all_tags', $notfall_search_flat ) ) );
 					?>
-					<div class="soe-telefonbuch-card" data-search-text="<?php echo esc_attr( strtolower( trim( (string) $vorname . ' ' . (string) $nachname . ' ' . (string) $strasse . ' ' . (string) $ort ) ) ); ?>" data-sport="<?php echo esc_attr( $sport_data ); ?>">
-						<div class="soe-telefonbuch-card-name"><?php echo esc_html( trim( (string) $vorname . ' ' . (string) $nachname ) ); ?></div>
+					<div class="soe-telefonbuch-card soe-notfall-card" data-search-text="<?php echo esc_attr( $notfall_search_text ); ?>" data-sport="<?php echo esc_attr( $sport_data ); ?>">
+						<button type="button" class="soe-notfall-card-toggle" aria-expanded="false" aria-controls="soe-notfall-panel-<?php echo (int) $m->ID; ?>">
+							<span class="soe-telefonbuch-card-name"><?php echo esc_html( trim( (string) $vorname . ' ' . (string) $nachname ) ); ?></span>
+							<span class="dashicons dashicons-arrow-down-alt2 soe-notfall-card-chevron" aria-hidden="true"></span>
+						</button>
+						<div class="soe-notfall-card-panel" id="soe-notfall-panel-<?php echo (int) $m->ID; ?>" hidden>
 						<div class="soe-telefonbuch-card-address"><span class="dashicons dashicons-location" aria-hidden="true"></span> <?php echo esc_html( trim( (string) $strasse . ' ' . (string) $hausnummer ) ); ?>, <?php echo esc_html( (string) $plz . ' ' . (string) $ort ); ?></div>
 						<?php if ( $name_notfall || $tel_notfall ) : ?>
-							<div class="soe-telefonbuch-card-row soe-card-notfall-highlight">
-								<span class="dashicons dashicons-warning" aria-hidden="true"></span>
-								<strong><?php esc_html_e( 'Notfallkontakt', 'special-olympics-extension' ); ?>:</strong>
-								<?php echo esc_html( (string) $name_notfall ); ?>
-								<?php if ( $tel_notfall ) : ?>
-									<a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $tel_notfall ) ); ?>" class="soe-card-tel-link"><?php echo esc_html( $tel_notfall ); ?></a>
-								<?php endif; ?>
+							<div class="soe-telefonbuch-card-row soe-card-notfall-highlight soe-card-icon-row">
+								<span class="dashicons dashicons-warning soe-card-icon" aria-hidden="true"></span>
+								<div class="soe-card-body">
+									<strong class="soe-card-title"><?php esc_html_e( 'Notfallkontakt', 'special-olympics-extension' ); ?></strong>
+									<div class="soe-card-content">
+										<?php echo esc_html( (string) $name_notfall ); ?>
+										<?php if ( $tel_notfall ) : ?>
+											<a href="tel:<?php echo esc_attr( preg_replace( '/[^0-9+]/', '', $tel_notfall ) ); ?>" class="soe-card-tel-link"><?php echo esc_html( $tel_notfall ); ?></a>
+										<?php endif; ?>
+									</div>
+								</div>
+							</div>
+						<?php endif; ?>
+						<?php if ( $has_allergien_nf ) : ?>
+							<div class="soe-telefonbuch-card-row soe-card-allergien-highlight soe-card-icon-row">
+								<span class="dashicons dashicons-warning soe-card-icon" aria-hidden="true"></span>
+								<div class="soe-card-body">
+									<strong class="soe-card-title"><?php esc_html_e( 'Allergien', 'special-olympics-extension' ); ?></strong>
+									<?php if ( is_string( $allergien_med ) && trim( $allergien_med ) !== '' ) : ?>
+										<div class="soe-card-kv"><span class="soe-card-k"><?php esc_html_e( 'Medikamente', 'special-olympics-extension' ); ?>:</span> <?php echo esc_html( trim( $allergien_med ) ); ?></div>
+									<?php endif; ?>
+									<?php if ( is_string( $allergien_lebens ) && trim( $allergien_lebens ) !== '' ) : ?>
+										<div class="soe-card-kv"><span class="soe-card-k"><?php esc_html_e( 'Lebensmittel', 'special-olympics-extension' ); ?>:</span> <?php echo esc_html( trim( $allergien_lebens ) ); ?></div>
+									<?php endif; ?>
+									<?php if ( is_string( $allergien_andere ) && trim( $allergien_andere ) !== '' ) : ?>
+										<div class="soe-card-kv"><span class="soe-card-k"><?php esc_html_e( 'Andere', 'special-olympics-extension' ); ?>:</span> <?php echo esc_html( trim( $allergien_andere ) ); ?></div>
+									<?php endif; ?>
+								</div>
+							</div>
+						<?php endif; ?>
+						<?php if ( $has_diagnose_nf ) : ?>
+							<div class="soe-telefonbuch-card-row soe-card-section soe-card-icon-row">
+								<span class="dashicons dashicons-forms soe-card-icon" aria-hidden="true"></span>
+								<div class="soe-card-body">
+									<strong class="soe-card-title"><?php esc_html_e( 'Diagnose', 'special-olympics-extension' ); ?></strong>
+									<?php if ( $hauptdiagnose_nf !== '' ) : ?>
+										<div class="soe-card-kv"><span class="soe-card-k"><?php esc_html_e( 'Hauptdiagnose', 'special-olympics-extension' ); ?>:</span> <?php echo nl2br( esc_html( $hauptdiagnose_nf ) ); ?></div>
+									<?php endif; ?>
+									<?php if ( $nebendiagnosen_nf !== '' ) : ?>
+										<div class="soe-card-kv"><span class="soe-card-k"><?php esc_html_e( 'Nebendiagnosen', 'special-olympics-extension' ); ?>:</span> <?php echo esc_html( $nebendiagnosen_nf ); ?></div>
+									<?php endif; ?>
+								</div>
+							</div>
+						<?php endif; ?>
+						<?php if ( $has_trisomie_nf ) : ?>
+							<div class="soe-telefonbuch-card-row soe-card-section soe-card-icon-row<?php echo ( $tri_betroffen_ja && $tri_path_nf === 'ja' ) ? ' soe-card-trisomie-alert' : ''; ?>">
+								<span class="dashicons dashicons-info soe-card-icon" aria-hidden="true"></span>
+								<div class="soe-card-body">
+									<strong class="soe-card-title"><?php esc_html_e( 'Trisomie 21', 'special-olympics-extension' ); ?></strong>
+									<?php if ( $tri_betroffen_nf !== '' ) : ?>
+										<?php $tri_betroffen_label = function_exists( 'soe_format_ja_nein_value' ) ? soe_format_ja_nein_value( $tri_betroffen_nf ) : $tri_betroffen_nf; ?>
+										<div class="soe-card-kv"><span class="soe-card-k"><?php esc_html_e( 'Betroffen', 'special-olympics-extension' ); ?>:</span> <?php echo esc_html( $tri_betroffen_label ); ?></div>
+									<?php endif; ?>
+									<?php if ( $tri_betroffen_ja && $tri_roentgen_nf !== '' ) : ?>
+										<?php $tri_roentgen_label = function_exists( 'soe_format_ja_nein_value' ) ? soe_format_ja_nein_value( $tri_roentgen_nf ) : $tri_roentgen_nf; ?>
+										<div class="soe-card-kv"><span class="soe-card-k"><?php esc_html_e( 'Röntgenbilder HWS', 'special-olympics-extension' ); ?>:</span> <?php echo esc_html( $tri_roentgen_label ); ?></div>
+									<?php endif; ?>
+									<?php if ( $tri_betroffen_ja && $tri_path_nf !== '' ) : ?>
+										<?php $tri_path_label = function_exists( 'soe_format_ja_nein_value' ) ? soe_format_ja_nein_value( $tri_path_nf ) : $tri_path_nf; ?>
+										<div class="soe-card-kv<?php echo $tri_path_nf === 'ja' ? ' soe-card-kv-alert' : ''; ?>"><span class="soe-card-k"><?php esc_html_e( 'Pathologisch (instabil)', 'special-olympics-extension' ); ?>:</span> <strong><?php echo esc_html( $tri_path_label ); ?></strong></div>
+									<?php endif; ?>
+									<?php if ( $tri_betroffen_ja && $tri_result_nf !== '' ) : ?>
+										<div class="soe-card-kv"><span class="soe-card-k"><?php esc_html_e( 'Resultat', 'special-olympics-extension' ); ?>:</span> <?php echo nl2br( esc_html( $tri_result_nf ) ); ?></div>
+									<?php endif; ?>
+								</div>
 							</div>
 						<?php endif; ?>
 						<?php if ( is_array( $weitere ) && ! empty( $weitere ) ) : ?>
-							<div class="soe-telefonbuch-card-row soe-card-section">
-								<span class="dashicons dashicons-phone" aria-hidden="true"></span>
-								<strong><?php esc_html_e( 'Weitere Kontakte', 'special-olympics-extension' ); ?>:</strong><br/>
-								<?php
-								$wk_parts = array();
-								foreach ( $weitere as $k ) {
-									$part = trim( ( isset( $k['funktion'] ) ? $k['funktion'] . ' ' : '' ) . ( isset( $k['vorname'] ) ? $k['vorname'] . ' ' : '' ) . ( isset( $k['nachname'] ) ? $k['nachname'] : '' ) );
-									if ( ! empty( $k['telefon'] ) ) {
-										$part .= ' <a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', $k['telefon'] ) ) . '" class="soe-card-tel-link">' . esc_html( $k['telefon'] ) . '</a>';
+							<div class="soe-telefonbuch-card-row soe-card-section soe-card-icon-row">
+								<span class="dashicons dashicons-phone soe-card-icon" aria-hidden="true"></span>
+								<div class="soe-card-body">
+									<strong class="soe-card-title"><?php esc_html_e( 'Weitere Kontakte', 'special-olympics-extension' ); ?></strong>
+									<div class="soe-card-content">
+									<?php
+									$wk_parts = array();
+									foreach ( $weitere as $k ) {
+										$part = trim( ( isset( $k['funktion'] ) ? $k['funktion'] . ' ' : '' ) . ( isset( $k['vorname'] ) ? $k['vorname'] . ' ' : '' ) . ( isset( $k['nachname'] ) ? $k['nachname'] : '' ) );
+										if ( ! empty( $k['telefon'] ) ) {
+											$part .= ' <a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', $k['telefon'] ) ) . '" class="soe-card-tel-link">' . esc_html( $k['telefon'] ) . '</a>';
+										}
+										$wk_parts[] = $part;
 									}
-									$wk_parts[] = $part;
-								}
-								echo wp_kses( implode( '<br/>', $wk_parts ), array( 'br' => array(), 'a' => array( 'href' => array(), 'class' => array() ) ) );
-								?></div>
+									echo wp_kses( implode( '<br/>', $wk_parts ), array( 'br' => array(), 'a' => array( 'href' => array(), 'class' => array() ) ) );
+									?>
+									</div>
+								</div>
+							</div>
 						<?php endif; ?>
 						<?php if ( is_array( $notfallmed ) && ! empty( $notfallmed ) ) : ?>
-							<div class="soe-telefonbuch-card-row soe-card-section"><span class="dashicons dashicons-clipboard" aria-hidden="true"></span> <strong><?php esc_html_e( 'Notfallmedikamente', 'special-olympics-extension' ); ?>:</strong><br/>
-								<?php
-								$med_parts = array();
-								foreach ( $notfallmed as $med ) {
-									$name = trim( isset( $med['name_medikament_notfall'] ) ? (string) $med['name_medikament_notfall'] : '' );
-									$dosis = trim( isset( $med['dosis_medikament_notfall'] ) ? (string) $med['dosis_medikament_notfall'] : '' );
-									$med_parts[] = $name && $dosis ? $name . ', ' . $dosis : ( $name ?: $dosis );
-								}
-								echo esc_html( implode( '; ', $med_parts ) );
-								?></div>
+							<div class="soe-telefonbuch-card-row soe-card-section soe-card-icon-row">
+								<span class="dashicons dashicons-clipboard soe-card-icon" aria-hidden="true"></span>
+								<div class="soe-card-body">
+									<strong class="soe-card-title"><?php esc_html_e( 'Notfallmedikamente', 'special-olympics-extension' ); ?></strong>
+									<div class="soe-card-content">
+									<?php
+									$med_parts = array();
+									foreach ( $notfallmed as $med ) {
+										$name = trim( isset( $med['name_medikament_notfall'] ) ? (string) $med['name_medikament_notfall'] : '' );
+										$dosis = trim( isset( $med['dosis_medikament_notfall'] ) ? (string) $med['dosis_medikament_notfall'] : '' );
+										$med_parts[] = $name && $dosis ? $name . ', ' . $dosis : ( $name ?: $dosis );
+									}
+									$med_parts = array_filter( $med_parts, 'strlen' );
+									echo wp_kses( implode( '<br />', array_map( 'esc_html', $med_parts ) ), array( 'br' => array() ) );
+									?>
+									</div>
+								</div>
+							</div>
 						<?php endif; ?>
 						<?php if ( is_array( $medikamentangaben ) && ! empty( $medikamentangaben ) ) : ?>
-							<div class="soe-telefonbuch-card-row soe-card-section"><span class="dashicons dashicons-clipboard" aria-hidden="true"></span> <strong><?php esc_html_e( 'Medikamentangaben', 'special-olympics-extension' ); ?>:</strong><br/>
-								<?php
-								$med2_parts = array();
-								foreach ( $medikamentangaben as $med ) {
-									$name = trim( isset( $med['name_medikament'] ) ? (string) $med['name_medikament'] : '' );
-									$dosis = trim( isset( $med['dosis_medikament'] ) ? (string) $med['dosis_medikament'] : '' );
-									$med2_parts[] = $name && $dosis ? $name . ', ' . $dosis : ( $name ?: $dosis );
-								}
-								echo esc_html( implode( '; ', $med2_parts ) );
-								?></div>
+							<div class="soe-telefonbuch-card-row soe-card-section soe-card-icon-row">
+								<span class="dashicons dashicons-clipboard soe-card-icon" aria-hidden="true"></span>
+								<div class="soe-card-body">
+									<strong class="soe-card-title"><?php esc_html_e( 'Medikamentangaben', 'special-olympics-extension' ); ?></strong>
+									<div class="soe-card-content">
+									<?php
+									$med2_parts = array();
+									foreach ( $medikamentangaben as $med ) {
+										$name = trim( isset( $med['name_medikament'] ) ? (string) $med['name_medikament'] : '' );
+										$dosis = trim( isset( $med['dosis_medikament'] ) ? (string) $med['dosis_medikament'] : '' );
+										$med2_parts[] = $name && $dosis ? $name . ', ' . $dosis : ( $name ?: $dosis );
+									}
+									$med2_parts = array_filter( $med2_parts, 'strlen' );
+									echo wp_kses( implode( '<br />', array_map( 'esc_html', $med2_parts ) ), array( 'br' => array() ) );
+									?>
+									</div>
+								</div>
+							</div>
+						<?php endif; ?>
+						<?php if ( $has_hausarzt_nf ) : ?>
+							<div class="soe-telefonbuch-card-row soe-card-section soe-card-icon-row">
+								<span class="dashicons dashicons-businessman soe-card-icon" aria-hidden="true"></span>
+								<div class="soe-card-body">
+									<strong class="soe-card-title"><?php esc_html_e( 'Hausarzt', 'special-olympics-extension' ); ?></strong>
+									<div class="soe-card-content">
+									<?php
+									if ( is_string( $hausarzt ) && trim( $hausarzt ) !== '' ) {
+										echo esc_html( trim( $hausarzt ) );
+									}
+									if ( is_string( $hausarzt_tel ) && trim( $hausarzt_tel ) !== '' ) {
+										echo ' <a href="tel:' . esc_attr( preg_replace( '/[^0-9+]/', '', $hausarzt_tel ) ) . '" class="soe-card-tel-link">' . esc_html( trim( $hausarzt_tel ) ) . '</a>';
+									}
+									?>
+									</div>
+								</div>
+							</div>
 						<?php endif; ?>
 						<?php
 						if ( $datenblatter ) :
@@ -573,6 +735,7 @@ function soe_render_telefonbuch_page() {
 								<a href="<?php echo esc_url( $proxy_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Medizinische Datenblätter', 'special-olympics-extension' ); ?> (Download)</a>
 							<?php endif;
 						endif; ?>
+						</div>
 					</div>
 				<?php endforeach; ?>
 			</div>
@@ -802,6 +965,8 @@ function soe_render_telefonbuch_page() {
 			$event_snapshot_meta = defined( 'SOE_EVENT_SNAPSHOT_META' ) ? SOE_EVENT_SNAPSHOT_META : 'soe_event_snapshot';
 			$detail_by_id        = array();
 			$soe_tb_admin        = current_user_can( 'manage_options' );
+			$soe_tb_pdf_can      = function_exists( 'soe_pdf_can_dompdf' ) && soe_pdf_can_dompdf();
+			$soe_tb_detail_col   = $soe_tb_admin ? 18 : 16;
 			?>
 			<div class="soe-telefonbuch-alldata">
 				<?php
@@ -961,7 +1126,6 @@ function soe_render_telefonbuch_page() {
 							$allergien_med      = get_field( 'allergien_auf_medikamente', $m->ID );
 							$allergien_lebens   = get_field( 'allergien_auf_lebensmittel', $m->ID );
 							$allergien_andere   = get_field( 'andere_allergien', $m->ID );
-							$ernaehrung_bes     = get_field( 'ernahrung_besonderheiten', $m->ID );
 							$ernaehrung_weitere = get_field( 'ernahrung_weitere_informationen', $m->ID );
 							$bemerkungen        = get_field( 'bemerkungen', $m->ID );
 							$erforderliche_hilfsmittel = get_field( 'erforderliche_hilfsmittel', $m->ID );
@@ -971,6 +1135,24 @@ function soe_render_telefonbuch_page() {
 							$sprachekommunikation = get_field( 'sprachekommunikation', $m->ID );
 							$verhaltenauffalligkeiten = get_field( 'verhaltenauffalligkeiten', $m->ID );
 							$vorliebenangste    = get_field( 'vorliebenangste', $m->ID );
+							$gewohnheiten       = get_field( 'gewohnheiten', $m->ID );
+							$geburtsdatum       = get_field( 'geburtsdatum', $m->ID );
+							$staatsburgerschaft = get_field( 'staatsburgerschaft', $m->ID );
+							$geschlecht         = get_field( 'geschlecht', $m->ID );
+							$land               = get_field( 'land', $m->ID );
+							$peid_nr            = get_field( 'peid_nr', $m->ID );
+							$diagnose           = get_field( 'diagnose', $m->ID );
+							$hauptdiagnose      = is_array( $diagnose ) && isset( $diagnose['hauptdiagnose'] ) ? trim( (string) $diagnose['hauptdiagnose'] ) : '';
+							$psychische_leiden  = is_array( $diagnose ) && isset( $diagnose['psychische_leiden'] ) ? trim( (string) $diagnose['psychische_leiden'] ) : '';
+							$nebendiagnosen_str = function_exists( 'soe_format_member_checkbox_field' ) ? soe_format_member_checkbox_field( $m->ID, 'nebendiagnosen', 'diagnose' ) : '';
+							$trisomie_21        = get_field( 'trisomie_21', $m->ID );
+							$tri_betroffen      = is_array( $trisomie_21 ) && isset( $trisomie_21['trisomie_21_betroffen'] ) ? (string) $trisomie_21['trisomie_21_betroffen'] : '';
+							$tri_roentgen       = is_array( $trisomie_21 ) && isset( $trisomie_21['roentgenbilder_hws'] ) ? (string) $trisomie_21['roentgenbilder_hws'] : '';
+							$tri_pathological   = is_array( $trisomie_21 ) && isset( $trisomie_21['xray_pathological'] ) ? (string) $trisomie_21['xray_pathological'] : '';
+							$tri_result         = is_array( $trisomie_21 ) && isset( $trisomie_21['xray_result'] ) ? trim( (string) $trisomie_21['xray_result'] ) : '';
+							$ernaehrung_bes_str = function_exists( 'soe_format_member_checkbox_field' ) ? soe_format_member_checkbox_field( $m->ID, 'ernahrung_besonderheiten' ) : '';
+							$hilfsmittel_str    = function_exists( 'soe_format_member_checkbox_field' ) ? soe_format_member_checkbox_field( $m->ID, 'erforderliche_hilfsmittel' ) : '';
+							$unterstutzung_str  = function_exists( 'soe_format_member_checkbox_field' ) ? soe_format_member_checkbox_field( $m->ID, 'unterstutzung_bei' ) : '';
 							$medizin_parts = array();
 							if ( is_array( $notfallmed ) && ! empty( $notfallmed ) ) {
 								$names = array_map( function ( $med ) { return isset( $med['name_medikament_notfall'] ) ? $med['name_medikament_notfall'] : ''; }, $notfallmed );
@@ -989,7 +1171,7 @@ function soe_render_telefonbuch_page() {
 							if ( $has_hilfsmittel ) {
 								$medizin_parts[] = __( 'Hilfsmittel', 'special-olympics-extension' );
 							}
-							$has_beachtenswertes = ( is_string( $pflegebetreuung ) && trim( $pflegebetreuung ) !== '' ) || ( is_string( $sprachekommunikation ) && trim( $sprachekommunikation ) !== '' ) || ( is_string( $verhaltenauffalligkeiten ) && trim( $verhaltenauffalligkeiten ) !== '' ) || ( is_string( $vorliebenangste ) && trim( $vorliebenangste ) !== '' );
+							$has_beachtenswertes = ( is_string( $pflegebetreuung ) && trim( $pflegebetreuung ) !== '' ) || ( is_string( $sprachekommunikation ) && trim( $sprachekommunikation ) !== '' ) || ( is_string( $verhaltenauffalligkeiten ) && trim( $verhaltenauffalligkeiten ) !== '' ) || ( is_string( $vorliebenangste ) && trim( $vorliebenangste ) !== '' ) || ( is_string( $gewohnheiten ) && trim( $gewohnheiten ) !== '' );
 							if ( $has_beachtenswertes ) {
 								$medizin_parts[] = __( 'Beachtenswertes', 'special-olympics-extension' );
 							}
@@ -1002,10 +1184,22 @@ function soe_render_telefonbuch_page() {
 							$bank_name_tb = is_array( $bank_info_tb ) && isset( $bank_info_tb['bank_name'] ) ? (string) $bank_info_tb['bank_name'] : '';
 							$bank_iban_tb = is_array( $bank_info_tb ) && isset( $bank_info_tb['bank_iban'] ) ? (string) $bank_info_tb['bank_iban'] : '';
 							$search_parts = array(
-								$vorname, $nachname, $tel, $email, $ort, $strasse, $hausnummer, $plz,
+								$vorname, $nachname, $tel, $email, $ort, $strasse, $hausnummer, $plz, $land,
+								$geburtsdatum, $geschlecht, $staatsburgerschaft, $peid_nr,
 								$sport_labels, $kleidergrosse, $schuhgrosse, $name_notfall, $tel_notfall,
 								$medizin_label, $events_label,
+								$hauptdiagnose, $nebendiagnosen_str, $psychische_leiden,
 							);
+							if ( function_exists( 'soe_format_ja_nein_value' ) ) {
+								$search_parts[] = soe_format_ja_nein_value( $tri_betroffen );
+								$search_parts[] = soe_format_ja_nein_value( $tri_roentgen );
+								$search_parts[] = soe_format_ja_nein_value( $tri_pathological );
+							} else {
+								$search_parts[] = $tri_betroffen;
+								$search_parts[] = $tri_roentgen;
+								$search_parts[] = $tri_pathological;
+							}
+							$search_parts[] = $tri_result;
 							if ( $soe_tb_admin ) {
 								$search_parts[] = $bank_name_tb;
 								$search_parts[] = $bank_iban_tb;
@@ -1033,16 +1227,17 @@ function soe_render_telefonbuch_page() {
 							$search_parts[] = $hausarzt_tel;
 							$search_parts[] = $zahnarzt;
 							$search_parts[] = $zahnarzt_tel;
-							$search_parts[] = is_array( $ernaehrung_bes ) ? implode( ' ', $ernaehrung_bes ) : $ernaehrung_bes;
+							$search_parts[] = $ernaehrung_bes_str;
 							$search_parts[] = $ernaehrung_weitere;
 							$search_parts[] = $bemerkungen;
-							$search_parts[] = is_array( $erforderliche_hilfsmittel ) ? implode( ' ', $erforderliche_hilfsmittel ) : $erforderliche_hilfsmittel;
-							$search_parts[] = is_array( $unterstutzung_bei ) ? implode( ' ', $unterstutzung_bei ) : $unterstutzung_bei;
+							$search_parts[] = $hilfsmittel_str;
+							$search_parts[] = $unterstutzung_str;
 							$search_parts[] = $andere_hilfsmittel;
 							$search_parts[] = $pflegebetreuung;
 							$search_parts[] = $sprachekommunikation;
 							$search_parts[] = $verhaltenauffalligkeiten;
 							$search_parts[] = $vorliebenangste;
+							$search_parts[] = $gewohnheiten;
 							if ( is_array( $weitere ) ) {
 								foreach ( $weitere as $k ) {
 									$search_parts[] = isset( $k['funktion'] ) ? $k['funktion'] : '';
@@ -1062,6 +1257,34 @@ function soe_render_telefonbuch_page() {
 							$search_text = strtolower( implode( ' ', array_map( 'wp_strip_all_tags', $search_parts_flat ) ) );
 							ob_start();
 							echo '<div class="soe-telefonbuch-detail">';
+							$has_stammdaten = ( is_string( $geburtsdatum ) && trim( $geburtsdatum ) !== '' )
+								|| ( is_string( $geschlecht ) && trim( $geschlecht ) !== '' )
+								|| ( is_string( $staatsburgerschaft ) && trim( $staatsburgerschaft ) !== '' )
+								|| ( is_string( $land ) && trim( $land ) !== '' )
+								|| ( is_string( $peid_nr ) && trim( $peid_nr ) !== '' );
+							echo '<details class="soe-telefonbuch-detail-medizin" open><summary>' . esc_html__( 'Stammdaten', 'special-olympics-extension' ) . '</summary><div class="soe-telefonbuch-detail-medizin-inner soe-med-layout">';
+							if ( $has_stammdaten ) {
+								echo '<div class="soe-med-subgrid">';
+								if ( is_string( $geburtsdatum ) && trim( $geburtsdatum ) !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Geburtsdatum', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( trim( $geburtsdatum ) ) . '</span></div>';
+								}
+								if ( is_string( $geschlecht ) && trim( $geschlecht ) !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Geschlecht', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( trim( $geschlecht ) ) . '</span></div>';
+								}
+								if ( is_string( $staatsburgerschaft ) && trim( $staatsburgerschaft ) !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Staatsbürgerschaft', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( trim( $staatsburgerschaft ) ) . '</span></div>';
+								}
+								if ( is_string( $land ) && trim( $land ) !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Land', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( trim( $land ) ) . '</span></div>';
+								}
+								if ( is_string( $peid_nr ) && trim( $peid_nr ) !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'PEID-Nr.', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( trim( $peid_nr ) ) . '</span></div>';
+								}
+								echo '</div>';
+							} else {
+								echo '<p class="soe-telefonbuch-detail-empty">' . esc_html__( 'Keine Stammdaten erfasst.', 'special-olympics-extension' ) . '</p>';
+							}
+							echo '</div></details>';
 							$has_kontakte_content = ( is_string( $bemerkungen ) && trim( $bemerkungen ) !== '' );
 							if ( is_array( $weitere ) && ! empty( $weitere ) ) {
 								foreach ( $weitere as $k ) {
@@ -1116,6 +1339,49 @@ function soe_render_telefonbuch_page() {
 								echo '<p class="soe-telefonbuch-detail-empty">' . esc_html__( 'Keine weiteren Kontakte oder Bemerkungen erfasst.', 'special-olympics-extension' ) . '</p>';
 							}
 							echo '</div></details>';
+							$has_diagnose = $hauptdiagnose !== '' || $psychische_leiden !== '' || $nebendiagnosen_str !== '';
+							echo '<details class="soe-telefonbuch-detail-medizin" open><summary>' . esc_html__( 'Diagnose', 'special-olympics-extension' ) . '</summary><div class="soe-telefonbuch-detail-medizin-inner soe-med-layout">';
+							if ( $has_diagnose ) {
+								echo '<div class="soe-med-subgrid">';
+								if ( $hauptdiagnose !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Hauptdiagnose', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . nl2br( esc_html( $hauptdiagnose ) ) . '</span></div>';
+								}
+								if ( $nebendiagnosen_str !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Nebendiagnosen', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( $nebendiagnosen_str ) . '</span></div>';
+								}
+								if ( $psychische_leiden !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Psychische Leiden', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . nl2br( esc_html( $psychische_leiden ) ) . '</span></div>';
+								}
+								echo '</div>';
+							} else {
+								echo '<p class="soe-telefonbuch-detail-empty">' . esc_html__( 'Keine Diagnosen erfasst.', 'special-olympics-extension' ) . '</p>';
+							}
+							echo '</div></details>';
+							$has_trisomie = $tri_betroffen !== '' || $tri_roentgen !== '' || $tri_pathological !== '' || $tri_result !== '';
+							$tri_betroffen_ja = ( $tri_betroffen === 'ja' );
+							echo '<details class="soe-telefonbuch-detail-medizin" open><summary>' . esc_html__( 'Trisomie 21', 'special-olympics-extension' ) . '</summary><div class="soe-telefonbuch-detail-medizin-inner soe-med-layout">';
+							if ( $has_trisomie ) {
+								echo '<div class="soe-med-subgrid">';
+								if ( $tri_betroffen !== '' ) {
+									$tri_betroffen_label = function_exists( 'soe_format_ja_nein_value' ) ? soe_format_ja_nein_value( $tri_betroffen ) : $tri_betroffen;
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Trisomie 21 betroffen', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( $tri_betroffen_label ) . '</span></div>';
+								}
+								if ( $tri_betroffen_ja && $tri_roentgen !== '' ) {
+									$tri_roentgen_label = function_exists( 'soe_format_ja_nein_value' ) ? soe_format_ja_nein_value( $tri_roentgen ) : $tri_roentgen;
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Röntgenbilder HWS', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( $tri_roentgen_label ) . '</span></div>';
+								}
+								if ( $tri_betroffen_ja && $tri_pathological !== '' ) {
+									$tri_pathological_label = function_exists( 'soe_format_ja_nein_value' ) ? soe_format_ja_nein_value( $tri_pathological ) : $tri_pathological;
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Pathologisch (instabil)', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( $tri_pathological_label ) . '</span></div>';
+								}
+								if ( $tri_betroffen_ja && $tri_result !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Röntgen-Resultat', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . nl2br( esc_html( $tri_result ) ) . '</span></div>';
+								}
+								echo '</div>';
+							} else {
+								echo '<p class="soe-telefonbuch-detail-empty">' . esc_html__( 'Keine Angaben zu Trisomie 21 erfasst.', 'special-olympics-extension' ) . '</p>';
+							}
+							echo '</div></details>';
 							echo '<details class="soe-telefonbuch-detail-medizin" open><summary>' . esc_html__( 'Medizin', 'special-olympics-extension' ) . '</summary><div class="soe-telefonbuch-detail-medizin-inner soe-med-layout">';
 							if ( $datenblatter ) {
 								// Extract attachment ID - handle various ACF formats including transformed arrays
@@ -1145,8 +1411,7 @@ function soe_render_telefonbuch_page() {
 							$has_versicherung = ( is_string( $krankenkasse ) && trim( $krankenkasse ) !== '' ) || ( is_string( $krankenkasse_idnr ) && trim( $krankenkasse_idnr ) !== '' ) || ( is_string( $unfallv_name ) && trim( $unfallv_name ) !== '' ) || ( is_string( $unfallv_idnr ) && trim( $unfallv_idnr ) !== '' );
 							$has_aerzte = ( is_string( $hausarzt ) && trim( $hausarzt ) !== '' ) || ( is_string( $hausarzt_tel ) && trim( $hausarzt_tel ) !== '' ) || ( is_string( $zahnarzt ) && trim( $zahnarzt ) !== '' ) || ( is_string( $zahnarzt_tel ) && trim( $zahnarzt_tel ) !== '' );
 							$has_allergien = ( is_string( $allergien_med ) && trim( $allergien_med ) !== '' ) || ( is_string( $allergien_lebens ) && trim( $allergien_lebens ) !== '' ) || ( is_string( $allergien_andere ) && trim( $allergien_andere ) !== '' );
-							$ernaehrung_bes_arr = is_array( $ernaehrung_bes ) ? $ernaehrung_bes : ( is_string( $ernaehrung_bes ) ? array( $ernaehrung_bes ) : array() );
-							$has_ernaehrung = ! empty( $ernaehrung_bes_arr ) || ( is_string( $ernaehrung_weitere ) && trim( $ernaehrung_weitere ) !== '' );
+							$has_ernaehrung = $ernaehrung_bes_str !== '' || ( is_string( $ernaehrung_weitere ) && trim( $ernaehrung_weitere ) !== '' );
 							$has_left  = ( is_array( $notfallmed ) && ! empty( $notfallmed ) ) || ( is_array( $medikamentangaben ) && ! empty( $medikamentangaben ) ) || $has_allergien;
 							$has_right = $has_versicherung || $has_aerzte || $has_ernaehrung;
 							if ( $has_left || $has_right ) {
@@ -1227,8 +1492,8 @@ function soe_render_telefonbuch_page() {
 								}
 								if ( $has_ernaehrung ) {
 									echo '<div class="soe-med-group soe-med-group-ernaehrung"><div class="soe-med-row soe-med-row-title">' . esc_html__( 'Ernährung', 'special-olympics-extension' ) . '</div><div class="soe-med-subgrid">';
-									if ( ! empty( $ernaehrung_bes_arr ) ) {
-										echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Besonderheiten', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( implode( ', ', $ernaehrung_bes_arr ) ) . '</span></div>';
+									if ( $ernaehrung_bes_str !== '' ) {
+										echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Besonderheiten', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( $ernaehrung_bes_str ) . '</span></div>';
 									}
 									if ( is_string( $ernaehrung_weitere ) && trim( $ernaehrung_weitere ) !== '' ) {
 										echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Weitere Infos', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . nl2br( esc_html( trim( $ernaehrung_weitere ) ) ) . '</span></div>';
@@ -1246,11 +1511,11 @@ function soe_render_telefonbuch_page() {
 							echo '<details class="soe-telefonbuch-detail-medizin" open><summary>' . esc_html__( 'Weitere Hilfsmittel', 'special-olympics-extension' ) . '</summary><div class="soe-telefonbuch-detail-medizin-inner soe-med-layout">';
 							if ( $has_hilfsmittel ) {
 								echo '<div class="soe-med-subgrid">';
-								if ( is_array( $erforderliche_hilfsmittel ) && ! empty( $erforderliche_hilfsmittel ) ) {
-									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Erforderliche Hilfsmittel', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( implode( ', ', $erforderliche_hilfsmittel ) ) . '</span></div>';
+								if ( $hilfsmittel_str !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Erforderliche Hilfsmittel', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( $hilfsmittel_str ) . '</span></div>';
 								}
-								if ( is_array( $unterstutzung_bei ) && ! empty( $unterstutzung_bei ) ) {
-									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Unterstützung bei', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( implode( ', ', $unterstutzung_bei ) ) . '</span></div>';
+								if ( $unterstutzung_str !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Unterstützung bei', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . esc_html( $unterstutzung_str ) . '</span></div>';
 								}
 								if ( is_string( $andere_hilfsmittel ) && trim( $andere_hilfsmittel ) !== '' ) {
 									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Andere Hilfsmittel', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . nl2br( esc_html( trim( $andere_hilfsmittel ) ) ) . '</span></div>';
@@ -1274,6 +1539,9 @@ function soe_render_telefonbuch_page() {
 								}
 								if ( is_string( $vorliebenangste ) && trim( $vorliebenangste ) !== '' ) {
 									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Vorlieben/Ängste', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . nl2br( esc_html( trim( $vorliebenangste ) ) ) . '</span></div>';
+								}
+								if ( is_string( $gewohnheiten ) && trim( $gewohnheiten ) !== '' ) {
+									echo '<div class="soe-med-row"><span class="soe-med-label">' . esc_html__( 'Gewohnheiten', 'special-olympics-extension' ) . '</span><span class="soe-med-value">' . nl2br( esc_html( trim( $gewohnheiten ) ) ) . '</span></div>';
 								}
 								echo '</div>';
 							} else {
@@ -1312,7 +1580,14 @@ function soe_render_telefonbuch_page() {
 									<td><?php echo esc_html( $bank_name_tb ); ?></td>
 									<td><?php echo esc_html( $bank_iban_tb ); ?></td>
 								<?php endif; ?>
-								<td><button type="button" class="button-link soe-telefonbuch-expand" aria-label="<?php esc_attr_e( 'Detail einblenden', 'special-olympics-extension' ); ?>" data-label-expand="<?php esc_attr_e( 'Detail einblenden', 'special-olympics-extension' ); ?>" data-label-collapse="<?php esc_attr_e( 'Detail ausblenden', 'special-olympics-extension' ); ?>"><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></button></td>
+								<td class="soe-detail-col">
+									<span class="soe-detail-actions">
+										<?php if ( $soe_tb_pdf_can ) : ?>
+											<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=soe_export_telefonbuch_pdf&member_id=' . (int) $m->ID ), 'soe_export_telefonbuch_pdf_' . (int) $m->ID ) ); ?>" class="soe-telefonbuch-pdf" target="_blank" rel="noopener noreferrer" title="<?php esc_attr_e( 'Mitgliederdaten als PDF', 'special-olympics-extension' ); ?>" aria-label="<?php esc_attr_e( 'Mitgliederdaten als PDF', 'special-olympics-extension' ); ?>"><span class="dashicons dashicons-media-document" aria-hidden="true"></span></a>
+										<?php endif; ?>
+										<button type="button" class="button-link soe-telefonbuch-expand" aria-label="<?php esc_attr_e( 'Detail einblenden', 'special-olympics-extension' ); ?>" data-label-expand="<?php esc_attr_e( 'Detail einblenden', 'special-olympics-extension' ); ?>" data-label-collapse="<?php esc_attr_e( 'Detail ausblenden', 'special-olympics-extension' ); ?>"><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></button>
+									</span>
+								</td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
@@ -1320,8 +1595,8 @@ function soe_render_telefonbuch_page() {
 				<script type="text/javascript">
 					window.soeTelefonbuchDetails = <?php echo wp_json_encode( $detail_by_id ); ?>;
 					window.soeTelefonbuchDefaultVisible = <?php echo wp_json_encode( array_values( array_map( function ( $c ) { return $c['idx']; }, array_filter( $col_config, function ( $c ) { return $c['default']; } ) ) ) ); ?>;
-					window.soeTelefonbuchDetailCol = <?php echo $soe_tb_admin ? 18 : 16; ?>;
-					window.soeTelefonbuchMaxColIndex = <?php echo $soe_tb_admin ? 18 : 16; ?>;
+					window.soeTelefonbuchDetailCol = <?php echo (int) $soe_tb_detail_col; ?>;
+					window.soeTelefonbuchMaxColIndex = <?php echo (int) $soe_tb_detail_col; ?>;
 				</script>
 			</div>
 		<?php endif; ?>

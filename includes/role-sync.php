@@ -27,8 +27,24 @@ function soe_get_special_olympics_roles() {
 		'praktikant_in',
 		'schueler_in',
 		'athlete_leader',
+		'stiftungsrat',
 	);
 	return apply_filters( 'soe_roles', $default_roles );
+}
+
+/**
+ * Creates the "stiftungsrat" WP role if it does not yet exist.
+ * Runs on init so it is idempotent across activations and updates.
+ */
+add_action( 'init', 'soe_maybe_register_stiftungsrat_role', 5 );
+function soe_maybe_register_stiftungsrat_role() {
+	if ( ! get_role( 'stiftungsrat' ) ) {
+		add_role(
+			'stiftungsrat',
+			__( 'Stiftungsrat', 'special-olympics-extension' ),
+			array( 'read' => true )
+		);
+	}
 }
 
 /**

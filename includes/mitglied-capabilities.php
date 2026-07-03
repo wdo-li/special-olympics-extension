@@ -59,26 +59,26 @@ add_action( 'admin_menu', 'soe_profil_link_to_account', 9999 );
 add_action( 'add_meta_boxes', 'soe_mitglied_add_archive_meta_box' );
 add_action( 'wp_ajax_soe_archive_member', 'soe_ajax_archive_member' );
 add_action( 'wp_ajax_soe_restore_member', 'soe_ajax_restore_member' );
-add_action( 'admin_enqueue_scripts', 'soe_mitglied_admin_scripts' );
+add_action( 'acf/input/admin_enqueue_scripts', 'soe_mitglied_admin_scripts' );
 
 /**
  * Enqueues admin script for mitglied edit screen (archive/restore buttons).
  *
  * @param string $hook Current admin page hook.
  */
-function soe_mitglied_admin_scripts( $hook ) {
-	if ( $hook !== 'post.php' && $hook !== 'post-new.php' ) {
+function soe_mitglied_admin_scripts() {
+	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+	if ( ! $screen || $screen->post_type !== 'mitglied' ) {
 		return;
 	}
-	$screen = get_current_screen();
-	if ( ! $screen || $screen->post_type !== 'mitglied' ) {
+	if ( ! in_array( $screen->base, array( 'post', 'post-new' ), true ) ) {
 		return;
 	}
 	wp_enqueue_script(
 		'soe-admin-mitglied',
 		plugin_dir_url( dirname( __FILE__ ) ) . 'assets/js/admin-mitglied.js',
-		array( 'jquery' ),
-		'1.0.4',
+		array( 'jquery', 'acf-input' ),
+		SOE_PLUGIN_VERSION,
 		true
 	);
 	// Generate nonces for medical file downloads
@@ -98,10 +98,12 @@ function soe_mitglied_admin_scripts( $hook ) {
 	}
 
 	wp_localize_script( 'soe-admin-mitglied', 'soeMitgliedAdmin', array(
-		'isNonAdmin'          => ! current_user_can( 'manage_options' ),
-		'acfTitleReplacement' => current_user_can( 'manage_options' ) ? __( 'Mitglied', 'special-olympics-extension' ) : __( 'Athlet*in', 'special-olympics-extension' ),
-		'adminPostUrl'        => admin_url( 'admin-post.php' ),
-		'medicalNonces'       => $medical_nonces,
+		'isNonAdmin'              => ! current_user_can( 'manage_options' ),
+		'acfTitleReplacement'     => current_user_can( 'manage_options' ) ? __( 'Mitglied', 'special-olympics-extension' ) : __( 'Athlet*in', 'special-olympics-extension' ),
+		'adminPostUrl'            => admin_url( 'admin-post.php' ),
+		'medicalNonces'           => $medical_nonces,
+		'medicationConsentPairs'  => function_exists( 'soe_get_medication_consent_pairs_for_js' ) ? soe_get_medication_consent_pairs_for_js() : array(),
+		'medicationConsentHidden' => defined( 'SOE_MEDICATION_CONSENT_HIDDEN_CLASS' ) ? SOE_MEDICATION_CONSENT_HIDDEN_CLASS : 'soe-medication-consent-hidden',
 	) );
 }
 
@@ -251,6 +253,7 @@ function soe_mitglied_list_add_status_filter( $post_type ) {
 		'praktikant_in'       => __( 'Praktikant*in', 'special-olympics-extension' ),
 		'schueler_in'         => __( 'Schüler*in', 'special-olympics-extension' ),
 		'athlete_leader'      => __( 'Athlete Leader', 'special-olympics-extension' ),
+		'stiftungsrat'        => __( 'Stiftungsrat', 'special-olympics-extension' ),
 	);
 	?>
 	<select name="soe_member_role">

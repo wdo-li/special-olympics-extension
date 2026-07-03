@@ -28,7 +28,8 @@
                     "praktikant_in": "Praktikant*in",
                     "schueler_in": "Schüler*in",
                     "unified": "Unified",
-                    "athlete_leader": "Athlete Leader"
+                    "athlete_leader": "Athlete Leader",
+                    "stiftungsrat": "Stiftungsrat"
                 },
                 "default_value": [],
                 "return_format": "value",
@@ -53,17 +54,8 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "placement": "top",
                 "endpoint": 0,
-                "frontend_step": 0,
-                "step_buttons": [
-                    "previous",
-                    "next"
-                ],
-                "prev_button_text": "",
-                "next_button_text": "",
                 "selected": 0
             },
             {
@@ -73,7 +65,7 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": [
                     [
                         {
@@ -102,7 +94,7 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": [
                     [
                         {
@@ -130,7 +122,7 @@
                 "name": "e-mail",
                 "aria-label": "",
                 "type": "email",
-                "instructions": "",
+                "instructions": "An diese Mailadresse werden alle Informationen gesendet.",
                 "required": 0,
                 "conditional_logic": [
                     [
@@ -166,8 +158,6 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -182,20 +172,19 @@
                 "aria-label": "",
                 "type": "date_picker",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "33",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "display_format": "d.m.Y",
                 "return_format": "d.m.Y",
                 "first_day": 1,
-                "allow_in_bindings": 0,
-                "default_to_current_date": 0
+                "default_to_current_date": 0,
+                "allow_in_bindings": 0
             },
             {
                 "key": "field_68278f976fdf5",
@@ -204,15 +193,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "33",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "Liechtenstein",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -227,15 +215,14 @@
                 "aria-label": "",
                 "type": "radio",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "33",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "choices": {
                     "Männlich": "Männlich",
                     "Weiblich": "Weiblich"
@@ -255,7 +242,7 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "Falls nicht vorhanden, kann Vor- und Nachname eingegeben werden.",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": [
                     [
                         {
@@ -348,8 +335,6 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "message": "",
                 "new_lines": "wpautop",
                 "esc_html": 0
@@ -361,15 +346,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -384,15 +368,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -407,15 +390,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -430,15 +412,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -453,15 +434,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -483,8 +463,6 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "acfenc_encrypt": 0,
                 "default_value": "",
                 "min": "",
@@ -597,7 +575,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "frontend_admin_display_mode": "edit",
                         "acfenc_encrypt": 1,
                         "default_value": "",
                         "maxlength": "",
@@ -652,17 +629,8 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "placement": "top",
                 "endpoint": 0,
-                "frontend_step": 0,
-                "step_buttons": [
-                    "previous",
-                    "next"
-                ],
-                "prev_button_text": "",
-                "next_button_text": "",
                 "selected": 0
             },
             {
@@ -672,15 +640,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -695,15 +662,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -733,17 +699,8 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "placement": "top",
                 "endpoint": 0,
-                "frontend_step": 0,
-                "step_buttons": [
-                    "previous",
-                    "next"
-                ],
-                "prev_button_text": "",
-                "next_button_text": "",
                 "selected": 0
             },
             {
@@ -753,15 +710,14 @@
                 "aria-label": "",
                 "type": "group",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "layout": "block",
                 "sub_fields": [
                     {
@@ -778,8 +734,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "only_front": 0,
-                        "frontend_admin_display_mode": "edit",
                         "acfenc_encrypt": 0,
                         "default_value": "",
                         "maxlength": "",
@@ -802,8 +756,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "only_front": 0,
-                        "frontend_admin_display_mode": "edit",
                         "acfenc_encrypt": 0,
                         "default_value": "",
                         "maxlength": "",
@@ -828,8 +780,6 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "layout": "table",
                 "pagination": 0,
                 "min": 0,
@@ -852,8 +802,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "only_front": 0,
-                        "frontend_admin_display_mode": "edit",
                         "default_value": "",
                         "maxlength": "",
                         "allow_in_bindings": 0,
@@ -876,8 +824,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "only_front": 0,
-                        "frontend_admin_display_mode": "edit",
                         "default_value": "",
                         "maxlength": "",
                         "allow_in_bindings": 0,
@@ -900,8 +846,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "only_front": 0,
-                        "frontend_admin_display_mode": "edit",
                         "default_value": "",
                         "maxlength": "",
                         "allow_in_bindings": 0,
@@ -924,8 +868,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "only_front": 0,
-                        "frontend_admin_display_mode": "edit",
                         "default_value": "",
                         "maxlength": "",
                         "allow_in_bindings": 0,
@@ -948,8 +890,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "only_front": 0,
-                        "frontend_admin_display_mode": "edit",
                         "default_value": "",
                         "allow_in_bindings": 0,
                         "placeholder": "",
@@ -971,8 +911,6 @@
                             "class": "",
                             "id": ""
                         },
-                        "only_front": 0,
-                        "frontend_admin_display_mode": "edit",
                         "default_value": "",
                         "maxlength": "",
                         "allow_in_bindings": 0,
@@ -997,8 +935,7 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1089,11 +1026,11 @@
                 "selected": 0
             },
             {
-                "key": "field_682b3436a9d6c",
-                "label": "Medizinisches Datenblatt",
-                "name": "medizinische_datenblatter",
+                "key": "field_6a44f58c82474",
+                "label": "Diagnose",
+                "name": "diagnose",
                 "aria-label": "",
-                "type": "file",
+                "type": "group",
                 "instructions": "",
                 "required": 0,
                 "conditional_logic": [
@@ -1110,12 +1047,186 @@
                     "class": "",
                     "id": ""
                 },
-                "return_format": "array",
-                "library": "all",
-                "min_size": "",
-                "max_size": "",
-                "mime_types": "",
-                "allow_in_bindings": 0
+                "acfenc_encrypt": 0,
+                "layout": "block",
+                "sub_fields": [
+                    {
+                        "key": "field_6a44f5fb82475",
+                        "label": "Hauptdiagnose",
+                        "name": "hauptdiagnose",
+                        "aria-label": "",
+                        "type": "textarea",
+                        "instructions": "",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 0,
+                        "rows": "",
+                        "placeholder": "",
+                        "new_lines": ""
+                    },
+                    {
+                        "key": "field_6a44f60982476",
+                        "label": "Nebendiagnosen",
+                        "name": "nebendiagnosen",
+                        "aria-label": "",
+                        "type": "checkbox",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "choices": {
+                            "aggression": "Aggression",
+                            "autoaggression": "Autoaggression",
+                            "angstzustaende": "Angstzustände",
+                            "asthma": "Asthma\/Lungenleiden",
+                            "bluterkrankheit": "Bluterkrankheit",
+                            "chronische_infektion": "Chronische Infektion",
+                            "depression": "Depression\/Psychisches Leiden",
+                            "epilepsie": "Epilepsie",
+                            "herzkrankheit": "Herzkrankheit\/-Fehler",
+                            "inkontinenz": "Inkontinenz",
+                            "magen_darm": "Magen-Darmprobleme",
+                            "nierenleiden": "Nierenleiden",
+                            "wirbelsaeule": "Wirbelsäule\/Bewegungsapparat-Probleme",
+                            "verhaltensstoerungen": "Verhaltensstörungen"
+                        },
+                        "default_value": [],
+                        "return_format": "value",
+                        "allow_custom": 1,
+                        "save_custom": 1,
+                        "allow_in_bindings": 0,
+                        "layout": "vertical",
+                        "toggle": 0,
+                        "custom_choice_button_text": "Eine neue Auswahlmöglichkeit hinzufügen"
+                    },
+                    {
+                        "key": "field_6a44faa077a8d",
+                        "label": "Psychische Leiden",
+                        "name": "psychische_leiden",
+                        "aria-label": "",
+                        "type": "textarea",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 0,
+                        "rows": "",
+                        "placeholder": "",
+                        "new_lines": ""
+                    }
+                ]
+            },
+            {
+                "key": "field_682b36ce17bbe",
+                "label": "Medikamentangaben",
+                "name": "medikamentangaben",
+                "aria-label": "",
+                "type": "repeater",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "layout": "table",
+                "pagination": 0,
+                "min": 0,
+                "max": 0,
+                "collapsed": "",
+                "button_label": "Eintrag hinzufügen",
+                "rows_per_page": 20,
+                "sub_fields": [
+                    {
+                        "key": "field_682b36f717bbf",
+                        "label": "Name Medikament",
+                        "name": "name_medikament",
+                        "aria-label": "",
+                        "type": "text",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 0,
+                        "placeholder": "",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_682b36ce17bbe"
+                    },
+                    {
+                        "key": "field_682b370917bc0",
+                        "label": "Dosis Medikament",
+                        "name": "dosis_medikament",
+                        "aria-label": "",
+                        "type": "text",
+                        "instructions": "",
+                        "required": 0,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 0,
+                        "placeholder": "",
+                        "prepend": "",
+                        "append": "",
+                        "parent_repeater": "field_682b36ce17bbe"
+                    }
+                ]
+            },
+            {
+                "key": "field_6a477cb605f1b",
+                "label": "Zustimmung Medikamentenabgabe",
+                "name": "zustimmung_medikamentenabgabe",
+                "aria-label": "",
+                "type": "true_false",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "soe-medication-consent-hidden",
+                    "id": ""
+                },
+                "acfenc_encrypt": 0,
+                "message": "Hiermit erkläre ich mein Einverständnis, dass die aufgeführten Medikamente durch von Special Olympics Liechtenstein beauftragte Personen (z. B. Betreuer*innen, Trainer*innen) verabreicht werden dürfen.",
+                "default_value": 0,
+                "allow_in_bindings": 0,
+                "ui": 0,
+                "ui_on_text": "",
+                "ui_off_text": ""
             },
             {
                 "key": "field_6978bea705af8",
@@ -1131,8 +1242,6 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "acfenc_encrypt": 0,
                 "layout": "table",
                 "pagination": 0,
@@ -1156,8 +1265,7 @@
                             "class": "",
                             "id": ""
                         },
-                        "frontend_admin_display_mode": "edit",
-                        "acfenc_encrypt": 0,
+                        "acfenc_encrypt": 1,
                         "default_value": "",
                         "maxlength": "",
                         "allow_in_bindings": 0,
@@ -1180,8 +1288,7 @@
                             "class": "",
                             "id": ""
                         },
-                        "frontend_admin_display_mode": "edit",
-                        "acfenc_encrypt": 0,
+                        "acfenc_encrypt": 1,
                         "default_value": "",
                         "maxlength": "",
                         "allow_in_bindings": 0,
@@ -1193,21 +1300,232 @@
                 ]
             },
             {
+                "key": "field_6a477d901f4d3",
+                "label": "Zustimmung Notfallmedikamentenabgabe",
+                "name": "zustimmung_notfallmedikamentenabgabe",
+                "aria-label": "",
+                "type": "true_false",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "soe-medication-consent-hidden",
+                    "id": ""
+                },
+                "acfenc_encrypt": 0,
+                "message": "Hiermit erkläre ich mein Einverständnis, dass die aufgeführten Notfallmedikamente durch von Special Olympics Liechtenstein beauftragte Personen (z. B. Betreuer*innen, Trainer*innen) verabreicht werden dürfen.",
+                "default_value": 0,
+                "allow_in_bindings": 0,
+                "ui": 0,
+                "ui_on_text": "",
+                "ui_off_text": ""
+            },
+            {
+                "key": "field_6a44fb3677a8e",
+                "label": "Trisomie 21",
+                "name": "trisomie_21",
+                "aria-label": "",
+                "type": "group",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_682b2e76d356b",
+                            "operator": "==",
+                            "value": "athlet_in"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "acfenc_encrypt": 0,
+                "layout": "block",
+                "sub_fields": [
+                    {
+                        "key": "field_6a44fb4d77a8f",
+                        "label": "Trisomie 21 betroffen",
+                        "name": "trisomie_21_betroffen",
+                        "aria-label": "",
+                        "type": "select",
+                        "instructions": "",
+                        "required": 1,
+                        "conditional_logic": 0,
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "choices": {
+                            "ja": "Ja",
+                            "nein": "Nein"
+                        },
+                        "default_value": false,
+                        "return_format": "value",
+                        "multiple": 0,
+                        "allow_null": 1,
+                        "allow_in_bindings": 0,
+                        "ui": 0,
+                        "ajax": 0,
+                        "placeholder": "",
+                        "create_options": 0,
+                        "save_options": 0
+                    },
+                    {
+                        "key": "field_6a44fbce77a90",
+                        "label": "Haben Sie funktionelle Röntgenbilder der Halswirbelsäule gemacht?",
+                        "name": "roentgenbilder_hws",
+                        "aria-label": "",
+                        "type": "radio",
+                        "instructions": "",
+                        "required": 1,
+                        "conditional_logic": [
+                            [
+                                {
+                                    "field": "field_6a44fb4d77a8f",
+                                    "operator": "==",
+                                    "value": "ja"
+                                }
+                            ]
+                        ],
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "choices": {
+                            "ja": "Ja",
+                            "nein": "Nein"
+                        },
+                        "default_value": "",
+                        "return_format": "value",
+                        "allow_null": 1,
+                        "other_choice": 0,
+                        "allow_in_bindings": 0,
+                        "layout": "horizontal",
+                        "save_other_choice": 0
+                    },
+                    {
+                        "key": "field_6a44fc3177a91",
+                        "label": "Pathologisch (instabil)",
+                        "name": "xray_pathological",
+                        "aria-label": "",
+                        "type": "radio",
+                        "instructions": "",
+                        "required": 1,
+                        "conditional_logic": [
+                            [
+                                {
+                                    "field": "field_6a44fb4d77a8f",
+                                    "operator": "==",
+                                    "value": "ja"
+                                }
+                            ]
+                        ],
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "choices": {
+                            "ja": "Ja",
+                            "nein": "Nein"
+                        },
+                        "default_value": "",
+                        "return_format": "value",
+                        "allow_null": 1,
+                        "other_choice": 0,
+                        "allow_in_bindings": 0,
+                        "layout": "horizontal",
+                        "save_other_choice": 0
+                    },
+                    {
+                        "key": "field_6a44fc6377a92",
+                        "label": "Resultat",
+                        "name": "xray_result",
+                        "aria-label": "",
+                        "type": "textarea",
+                        "instructions": "Diese sind unbedingt erforderlich. Bitte Rücksprache mit zuständigem Arzt falls unklar.",
+                        "required": 1,
+                        "conditional_logic": [
+                            [
+                                {
+                                    "field": "field_6a44fb4d77a8f",
+                                    "operator": "==",
+                                    "value": "ja"
+                                }
+                            ]
+                        ],
+                        "wrapper": {
+                            "width": "",
+                            "class": "",
+                            "id": ""
+                        },
+                        "acfenc_encrypt": 1,
+                        "default_value": "",
+                        "maxlength": "",
+                        "allow_in_bindings": 0,
+                        "rows": "",
+                        "placeholder": "",
+                        "new_lines": ""
+                    }
+                ]
+            },
+            {
+                "key": "field_682b3436a9d6c",
+                "label": "Medizinisches Datenblatt",
+                "name": "medizinische_datenblatter",
+                "aria-label": "",
+                "type": "file",
+                "instructions": "",
+                "required": 0,
+                "conditional_logic": [
+                    [
+                        {
+                            "field": "field_682b2e76d356b",
+                            "operator": "==",
+                            "value": "athlet_in"
+                        },
+                        {
+                            "field": "field_682b2e76d356b",
+                            "operator": "==empty"
+                        }
+                    ]
+                ],
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "return_format": "array",
+                "library": "all",
+                "min_size": "",
+                "max_size": "",
+                "mime_types": "",
+                "allow_in_bindings": 0
+            },
+            {
                 "key": "field_682b34d6a9d70",
                 "label": "Krankenkasse Name & Ort",
                 "name": "krankenkasse_name_&_ort",
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1221,16 +1539,15 @@
                 "name": "krankenkasse_idnr",
                 "aria-label": "",
                 "type": "text",
-                "instructions": "",
-                "required": 0,
+                "instructions": "Sozialversicherungsnummer",
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1245,15 +1562,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1268,15 +1584,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1291,15 +1606,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1314,15 +1628,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1337,15 +1650,14 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 0,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1360,7 +1672,7 @@
                 "aria-label": "",
                 "type": "text",
                 "instructions": "",
-                "required": 0,
+                "required": 1,
                 "conditional_logic": 0,
                 "wrapper": {
                     "width": "50",
@@ -1407,8 +1719,7 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1430,7 +1741,7 @@
                     "class": "",
                     "id": ""
                 },
-                "acfenc_encrypt": 0,
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1452,7 +1763,7 @@
                     "class": "",
                     "id": ""
                 },
-                "acfenc_encrypt": 0,
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1492,10 +1803,10 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "choices": {
                     "vegetarisch": "vegetarisch",
+                    "vegan": "vegan",
                     "laktosefrei": "laktosefrei",
                     "glutenfrei": "glutenfrei",
                     "frei von Schweinefleisch": "frei von Schweinefleisch"
@@ -1523,86 +1834,13 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
                 "rows": "",
                 "placeholder": "",
                 "new_lines": ""
-            },
-            {
-                "key": "field_682b36ce17bbe",
-                "label": "Medikamentangaben",
-                "name": "medikamentangaben",
-                "aria-label": "",
-                "type": "repeater",
-                "instructions": "",
-                "required": 0,
-                "conditional_logic": 0,
-                "wrapper": {
-                    "width": "",
-                    "class": "",
-                    "id": ""
-                },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
-                "layout": "table",
-                "pagination": 0,
-                "min": 0,
-                "max": 0,
-                "collapsed": "",
-                "button_label": "Eintrag hinzufügen",
-                "rows_per_page": 20,
-                "sub_fields": [
-                    {
-                        "key": "field_682b36f717bbf",
-                        "label": "Name Medikament",
-                        "name": "name_medikament",
-                        "aria-label": "",
-                        "type": "text",
-                        "instructions": "",
-                        "required": 0,
-                        "conditional_logic": 0,
-                        "wrapper": {
-                            "width": "",
-                            "class": "",
-                            "id": ""
-                        },
-                        "frontend_admin_display_mode": "edit",
-                        "default_value": "",
-                        "maxlength": "",
-                        "allow_in_bindings": 0,
-                        "placeholder": "",
-                        "prepend": "",
-                        "append": "",
-                        "parent_repeater": "field_682b36ce17bbe"
-                    },
-                    {
-                        "key": "field_682b370917bc0",
-                        "label": "Dosis Medikament",
-                        "name": "dosis_medikament",
-                        "aria-label": "",
-                        "type": "text",
-                        "instructions": "",
-                        "required": 0,
-                        "conditional_logic": 0,
-                        "wrapper": {
-                            "width": "",
-                            "class": "",
-                            "id": ""
-                        },
-                        "frontend_admin_display_mode": "edit",
-                        "default_value": "",
-                        "maxlength": "",
-                        "allow_in_bindings": 0,
-                        "placeholder": "",
-                        "prepend": "",
-                        "append": "",
-                        "parent_repeater": "field_682b36ce17bbe"
-                    }
-                ]
             },
             {
                 "key": "field_682b37d32312b",
@@ -1618,8 +1856,6 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "message": "Weitere Hilfsmittel, die den Alltag erleichtern",
                 "new_lines": "wpautop",
                 "esc_html": 0
@@ -1638,7 +1874,7 @@
                     "class": "",
                     "id": ""
                 },
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "choices": {
                     "Brille": "Brille",
                     "Hörgerät": "Hörgerät",
@@ -1671,8 +1907,7 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "choices": {
                     "Körperpflege": "Körperpflege",
                     "Toilette": "Toilette",
@@ -1705,8 +1940,7 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1762,7 +1996,7 @@
                     "class": "",
                     "id": ""
                 },
-                "acfenc_encrypt": 0,
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1792,7 +2026,7 @@
                     "class": "",
                     "id": ""
                 },
-                "acfenc_encrypt": 0,
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1822,7 +2056,7 @@
                     "class": "",
                     "id": ""
                 },
-                "acfenc_encrypt": 0,
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1852,7 +2086,7 @@
                     "class": "",
                     "id": ""
                 },
-                "acfenc_encrypt": 0,
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1882,7 +2116,7 @@
                     "class": "",
                     "id": ""
                 },
-                "acfenc_encrypt": 0,
+                "acfenc_encrypt": 1,
                 "default_value": "",
                 "maxlength": "",
                 "allow_in_bindings": 0,
@@ -1904,17 +2138,8 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "placement": "top",
                 "endpoint": 0,
-                "frontend_step": 0,
-                "step_buttons": [
-                    "previous",
-                    "next"
-                ],
-                "prev_button_text": "",
-                "next_button_text": "",
                 "selected": 0
             },
             {
@@ -1931,11 +2156,9 @@
                     "class": "",
                     "id": ""
                 },
-                "only_front": 0,
-                "frontend_admin_display_mode": "edit",
                 "message": "Mit der angegebenen Auswahl bestätige ich die Richtigkeit der von mir oder über mich oder von berechtigten Dritten angegebenen, persönlichen Daten und nehme zur Kenntnis, dass die diese von mir oder über mich von berechtigten Dritten angegebenen Daten von Special Olympics Liechtenstein für die laut Datenschutzerklärung (abrufbar unter <a href=\"https:\/\/specialolympics.li\/datenschutzerklaerung\/\" target=\"_blank\">DSGVO<\/a>) vorgesehenen und zulässigen Zwecke verarbeitet, gespeichert und Dritten offengelegt werden dürfen.",
                 "new_lines": "wpautop",
-                "esc_html": 1
+                "esc_html": 0
             }
         ],
         "location": [

@@ -96,8 +96,14 @@ function soe_profile_completeness_check( $mitglied_id ) {
 	if ( is_email( get_field( 'e-mail', $mitglied_id ) ) ) {
 		$filled++;
 	}
-	if ( trim( (string) get_field( 'telefonnummer', $mitglied_id ) ) !== '' ) {
-		$filled++;
+	$roles          = function_exists( 'soe_get_mitglied_roles_for_required_check' ) ? soe_get_mitglied_roles_for_required_check( $mitglied_id ) : array();
+	$phone_required = function_exists( 'soe_acf_field_is_required_for_mitglied_roles' ) && soe_acf_field_is_required_for_mitglied_roles( 'telefonnummer', $roles );
+	if ( $phone_required ) {
+		if ( trim( (string) get_field( 'telefonnummer', $mitglied_id ) ) !== '' ) {
+			$filled++;
+		}
+	} else {
+		$total--;
 	}
 	if ( trim( (string) get_field( 'geburtsdatum', $mitglied_id ) ) !== '' ) {
 		$filled++;

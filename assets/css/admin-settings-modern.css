@@ -239,3 +239,65 @@
 	flex: 1;
 }
 
+.soe-duration-settings {
+	margin-top: 8px;
+	max-width: 520px;
+}
+
+.soe-duration-settings-section + .soe-duration-settings-section {
+	margin-top: 20px;
+	padding-top: 16px;
+	border-top: 1px solid #dcdcde;
+}
+
+.soe-duration-settings-subheading {
+	margin: 0 0 10px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.soe-duration-tier-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.soe-duration-tier-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+}
+
+.soe-duration-tier-row .soe-duration-label-input {
+	flex: 1 1 220px;
+	max-width: 100%;
+	margin: 0;
+}
+
+.soe-duration-tier-actions {
+	margin: 10px 0 0;
+}
+
+.soe-duration-tier-select-wrap {
+	margin: 0 0 10px;
+}
+
+.soe-duration-tier-select {
+	min-width: 260px;
+	max-width: 100%;
+}
+
+.soe-duration-rates-panel[hidden] {
+	display: none !important;
+}
+
+.soe-duration-tier-rates {
+	background: #fff;
+}
+
+.soe-duration-tier-rates th,
+.soe-duration-tier-rates td {
+	vertical-align: middle;
+}

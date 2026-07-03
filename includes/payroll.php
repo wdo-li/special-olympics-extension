@@ -372,7 +372,7 @@ function soe_payroll_collect_training_rows( $person_id, $start, $end ) {
 			'training_id'    => $tid,
 			'notes'          => is_string( $notes ) ? $notes : '',
 			'qualification'  => $role,
-			'duration'       => is_string( $duration ) ? $duration : '',
+			'duration'       => soe_get_duration_label( is_string( $duration ) ? $duration : '' ),
 			'ref_no'         => $ref_no,
 			'quantity'       => $count,
 			'chf_per_hour'   => $chf_per_hour,
@@ -411,7 +411,7 @@ function soe_payroll_qualification_to_label( $qualification ) {
 	if ( ! is_string( $qualification ) || $qualification === '' ) {
 		return '';
 	}
-	$keys = defined( 'SOE_HOURLY_RATE_KEYS' ) ? SOE_HOURLY_RATE_KEYS : array();
+	$keys = function_exists( 'soe_get_hourly_rate_definitions' ) ? soe_get_hourly_rate_definitions() : array();
 	if ( isset( $keys[ $qualification ] ) ) {
 		return $keys[ $qualification ];
 	}
@@ -433,66 +433,40 @@ function soe_payroll_qualification_to_label( $qualification ) {
  * Builds hourly rate key for payroll (role + stufe + duration).
  *
  * @param string $role_slug Role slug.
- * @param string $duration  Duration label.
+ * @param string $duration  Duration tier key from settings.
  * @param mixed  $grade_hl  grade_hl from member (1A, 1B for Hauptleiter).
- * @return string Key for SOE_HOURLY_RATE_KEYS.
+ * @return string Key for hourly rate lookup (see hourly rate definitions in settings).
  */
 function soe_payroll_get_rate_key( $role_slug, $duration, $grade_hl ) {
 	$d = is_string( $duration ) ? $duration : '';
 	$g = is_string( $grade_hl ) ? trim( $grade_hl ) : '';
+	$dur = soe_normalize_duration_key( $d );
+	if ( $dur === '' ) {
+		return '';
+	}
 	if ( $role_slug === 'hauptleiter_in' ) {
 		$stufe = ( $g === '1A' || $g === '1a' ) ? '1a' : '1b';
-		$dur = soe_payroll_duration_to_rate_suffix( $d );
-		return 'hauptleiter_in_' . $stufe . '_' . $dur;
+		return soe_build_payroll_rate_key( 'hauptleiter_in_' . $stufe, $dur );
 	}
 	if ( $role_slug === 'leiter_in' ) {
-		return 'leiter_in_2a_' . soe_payroll_duration_to_rate_suffix( $d );
+		return soe_build_payroll_rate_key( 'leiter_in_2a', $dur );
 	}
 	if ( $role_slug === 'assistenztrainer_in' ) {
-		return 'assistenztrainer_in_2b_' . soe_payroll_duration_to_rate_suffix( $d );
+		return soe_build_payroll_rate_key( 'assistenztrainer_in_2b', $dur );
 	}
 	if ( $role_slug === 'helfer_in' ) {
-		return 'helfer_in_3a_' . soe_payroll_duration_to_rate_suffix( $d );
+		return soe_build_payroll_rate_key( 'helfer_in_3a', $dur );
 	}
 	if ( $role_slug === 'praktikant_in' ) {
-		return 'praktikant_in_3b_' . soe_payroll_duration_to_rate_suffix( $d );
+		return soe_build_payroll_rate_key( 'praktikant_in_3b', $dur );
 	}
 	if ( $role_slug === 'schueler_in' ) {
-		return 'schueler_in_3b_' . soe_payroll_duration_to_rate_suffix( $d );
+		return soe_build_payroll_rate_key( 'schueler_in_3b', $dur );
 	}
 	if ( $role_slug === 'athlet_leader' || $role_slug === 'athlete_leader' ) {
-		return 'athlet_leader_3c_' . soe_payroll_duration_to_rate_suffix( $d );
+		return soe_build_payroll_rate_key( 'athlet_leader_3c', $dur );
 	}
 	return '';
-}
-
-/**
- * Maps duration label to rate key suffix (60, 90, more_2, more_4, hl, ski).
- *
- * @param string $duration Duration label.
- * @return string
- */
-function soe_payroll_duration_to_rate_suffix( $duration ) {
-	$d = strtolower( trim( $duration ) );
-	if ( $d === '60' ) {
-		return '60';
-	}
-	if ( $d === '90' ) {
-		return '90';
-	}
-	if ( strpos( $d, '2' ) !== false || strpos( $d, 'mehr' ) !== false ) {
-		return 'more_2';
-	}
-	if ( strpos( $d, '4' ) !== false ) {
-		return 'more_4';
-	}
-	if ( strpos( $d, 'hl' ) !== false || strpos( $d, 'pauschale' ) !== false ) {
-		return 'hl';
-	}
-	if ( strpos( $d, 'ski' ) !== false ) {
-		return 'ski';
-	}
-	return '60';
 }
 
 /**
@@ -531,7 +505,8 @@ function soe_payroll_collect_event_rows( $person_id, $start, $end ) {
 		$sport_slug = $e['sport_slug'] ?? '';
 		$bh_override = $e['bh_override'] ?? '';
 		$ref_no = ! empty( $bh_override ) ? $bh_override : ( $sport_slug ? soe_get_bh_number_for_sport( $sport_slug ) : '' );
-		$rate_key = soe_payroll_get_rate_key( $role, $duration, '' );
+		$grade_hl = function_exists( 'soe_get_mitglied_grade_hl' ) ? soe_get_mitglied_grade_hl( $person_id ) : '';
+		$rate_key = soe_payroll_get_rate_key( $role, $duration, $grade_hl );
 		$chf_per_hour = soe_get_hourly_rate( $rate_key );
 		$count = 1;
 		$chf_amount = $chf_per_hour !== '' && is_numeric( $chf_per_hour ) ? (float) $chf_per_hour : 0;
@@ -541,7 +516,7 @@ function soe_payroll_collect_event_rows( $person_id, $start, $end ) {
 			'event_id'      => $eid,
 			'notes'         => is_string( $notes ) ? $notes : '',
 			'qualification' => $role,
-			'duration'      => is_string( $duration ) ? $duration : '',
+			'duration'      => soe_get_duration_label( is_string( $duration ) ? $duration : '' ),
 			'ref_no'        => $ref_no,
 			'quantity'      => $count,
 			'chf_per_hour'  => $chf_per_hour,
@@ -812,7 +787,7 @@ function soe_payroll_render_rows_table_body( $rows, $is_events, $edit_page, $edi
 			?></td>
 			<td><?php echo esc_html( isset( $r['notes'] ) ? $r['notes'] : '' ); ?></td>
 			<td><?php echo esc_html( soe_payroll_qualification_to_label( isset( $r['qualification'] ) ? $r['qualification'] : '' ) ); ?></td>
-			<td><?php echo esc_html( isset( $r['duration'] ) ? $r['duration'] : '' ); ?></td>
+			<td><?php echo esc_html( soe_get_duration_label( isset( $r['duration'] ) ? $r['duration'] : '' ) ); ?></td>
 			<td><?php echo esc_html( isset( $r['ref_no'] ) ? $r['ref_no'] : '' ); ?></td>
 			<td <?php echo $quantity_title ? 'title="' . esc_attr( $quantity_title ) . '"' : ''; ?>><?php echo (int) ( isset( $r['quantity'] ) ? $r['quantity'] : 0 ); ?></td>
 			<td><?php echo esc_html( isset( $r['chf_per_hour'] ) ? $r['chf_per_hour'] : '' ); ?></td>
@@ -1182,7 +1157,7 @@ function soe_payroll_generate_pdf( $payroll_id, $persist = true ) {
 	foreach ( array_merge( $training_rows, $event_rows ) as $r ) {
 		$sport = isset( $r['sport'] ) ? $r['sport'] : ( isset( $r['event_title'] ) ? $r['event_title'] : '' );
 		$qual_label = soe_payroll_qualification_to_label( isset( $r['qualification'] ) ? $r['qualification'] : '' );
-		$table_rows_html .= '<tr><td>' . esc_html( $sport ) . '</td><td>' . esc_html( isset( $r['notes'] ) ? $r['notes'] : '' ) . '</td><td>' . esc_html( $qual_label ) . '</td><td class="center">' . esc_html( isset( $r['duration'] ) ? $r['duration'] : '' ) . '</td><td class="center">' . esc_html( isset( $r['ref_no'] ) ? $r['ref_no'] : '' ) . '</td><td class="right">' . (int) ( isset( $r['quantity'] ) ? $r['quantity'] : 0 ) . '</td><td class="right">' . esc_html( isset( $r['chf_per_hour'] ) ? $r['chf_per_hour'] : '' ) . '</td><td class="right">' . ( isset( $r['chf_amount'] ) ? number_format( (float) $r['chf_amount'], 2 ) : '' ) . '</td></tr>';
+		$table_rows_html .= '<tr><td>' . esc_html( $sport ) . '</td><td>' . esc_html( isset( $r['notes'] ) ? $r['notes'] : '' ) . '</td><td>' . esc_html( $qual_label ) . '</td><td class="center">' . esc_html( soe_get_duration_label( isset( $r['duration'] ) ? $r['duration'] : '' ) ) . '</td><td class="center">' . esc_html( isset( $r['ref_no'] ) ? $r['ref_no'] : '' ) . '</td><td class="right">' . (int) ( isset( $r['quantity'] ) ? $r['quantity'] : 0 ) . '</td><td class="right">' . esc_html( isset( $r['chf_per_hour'] ) ? $r['chf_per_hour'] : '' ) . '</td><td class="right">' . ( isset( $r['chf_amount'] ) ? number_format( (float) $r['chf_amount'], 2 ) : '' ) . '</td></tr>';
 	}
 	$adjustments = soe_db_payroll_get_adjustments( $payroll_id );
 	foreach ( $adjustments as $a ) {

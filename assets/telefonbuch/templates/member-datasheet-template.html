@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Mitgliederdaten</title>
+  <style>
+    @font-face {
+      font-family: 'Ubuntu Light';
+      src: url('{{font_ubuntu_light}}') format('truetype');
+    }
+    @font-face {
+      font-family: 'Ubuntu Medium';
+      src: url('{{font_ubuntu_medium}}') format('truetype');
+    }
+
+    @page { size: A4 portrait; margin: 15mm; }
+    html, body { padding: 0; margin: 0; }
+    body {
+      font-family: 'Ubuntu Light', Helvetica, Arial, sans-serif;
+      font-size: 9pt;
+      color: #000;
+      padding: 10mm 10mm 20mm;
+    }
+
+    .header {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-bottom: 4mm;
+    }
+    .header td { vertical-align: top; }
+    .title {
+      font-family: 'Ubuntu Medium', 'Ubuntu Light', Helvetica, sans-serif;
+      font-size: 14pt;
+      font-weight: 700;
+      margin: 0;
+      padding: 0;
+    }
+    .subtitle {
+      font-size: 10pt;
+      margin: 2mm 0 0 0;
+    }
+    .export-date {
+      font-size: 8pt;
+      color: #333;
+      margin: 1mm 0 0 0;
+    }
+    .org { text-align: right; }
+    .org-logo {
+      height: 22mm;
+      max-height: 22mm;
+      width: auto;
+      max-width: 100%;
+      display: block;
+      margin-left: auto;
+      margin-bottom: 2mm;
+      object-fit: contain;
+    }
+
+    .pdf-section {
+      margin-top: 4mm;
+      page-break-inside: avoid;
+    }
+    .pdf-section-title {
+      font-family: 'Ubuntu Medium', 'Ubuntu Light', Helvetica, sans-serif;
+      font-size: 10pt;
+      font-weight: 700;
+      margin: 0 0 2mm 0;
+      padding-bottom: 1mm;
+      border-bottom: 0.3mm solid #000;
+    }
+    table.pdf-fields-grid {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    table.pdf-fields-grid td {
+      width: 50%;
+      vertical-align: top;
+      padding: 0 3mm 2mm 0;
+    }
+    table.pdf-fields-grid td.pdf-field-full {
+      width: 100%;
+      padding-right: 0;
+    }
+    .pdf-field .pdf-label {
+      display: block;
+      font-family: 'Ubuntu Medium', 'Ubuntu Light', Helvetica, sans-serif;
+      font-weight: 700;
+      font-size: 8pt;
+      margin-bottom: 0.4mm;
+    }
+    .pdf-field .pdf-value {
+      display: block;
+      line-height: 1.35;
+      word-wrap: break-word;
+    }
+    .pdf-line-list {
+      margin: 0;
+      padding: 0 0 0 4mm;
+    }
+    .pdf-line-list li {
+      margin: 0 0 1mm 0;
+    }
+
+    table.pdf-kontakte {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-top: 2mm;
+      font-size: 8pt;
+    }
+    table.pdf-kontakte th {
+      font-family: 'Ubuntu Medium', 'Ubuntu Light', Helvetica, sans-serif;
+      font-weight: 700;
+      text-align: left;
+      padding: 1mm;
+      border-bottom: 0.3mm solid #000;
+    }
+    table.pdf-kontakte td {
+      padding: 1mm;
+      vertical-align: top;
+      border-bottom: 0.2mm solid #666;
+      word-wrap: break-word;
+    }
+
+    .pdf-medical-start {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+  <table class="header">
+    <tr>
+      <td>
+        <p class="title">Mitgliederdaten</p>
+        <p class="subtitle">{{member_name}}</p>
+        <p class="export-date">{{export_meta}}</p>
+      </td>
+      <td class="org">{{org_logo_img}}</td>
+    </tr>
+  </table>
+
+  {{page_one_sections}}
+
+  {{page_medical_sections}}
+</body>
+</html>

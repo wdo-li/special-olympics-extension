@@ -329,12 +329,12 @@ function soe_render_event_form() {
 							<td><input type="date" id="event_date" name="event_date" value="<?php echo esc_attr( $event['event_date'] ?? '' ); ?>" <?php disabled( $readonly ); ?> /></td>
 						</tr>
 						<tr>
-							<th><label for="duration"><?php esc_html_e( 'Dauer (Stunden)', 'special-olympics-extension' ); ?></label></th>
+							<th><label for="duration"><?php esc_html_e( 'Dauer', 'special-olympics-extension' ); ?></label></th>
 							<td>
 								<select id="duration" name="duration" <?php disabled( $readonly ); ?>>
 									<option value="">— <?php esc_html_e( 'Auswählen', 'special-olympics-extension' ); ?> —</option>
 									<?php foreach ( $duration_opts as $d ) : ?>
-										<option value="<?php echo esc_attr( $d ); ?>" <?php selected( $event['duration'] ?? '', $d ); ?>><?php echo esc_html( $d ); ?></option>
+										<option value="<?php echo esc_attr( $d['key'] ); ?>" <?php selected( $event['duration'] ?? '', $d['key'] ); ?>><?php echo esc_html( $d['label'] ); ?></option>
 									<?php endforeach; ?>
 								</select>
 							</td>
@@ -428,7 +428,7 @@ function soe_event_sync_snapshot_for_event( $event_id ) {
 				'sport' => $sport_term ? $sport_term->name : ( $event['sport_slug'] ?? '' ),
 				'event_type' => $type_term ? $type_term->name : ( $event['event_type_slug'] ?? '' ),
 				'role' => $role_slug,
-				'duration' => $event['duration'] ?? '',
+				'duration' => soe_get_duration_label( $event['duration'] ?? '' ),
 				'link' => current_user_can( 'edit_others_posts' ) ? admin_url( 'admin.php?page=soe-event-edit&id=' . $event_id ) : '',
 			);
 			$snapshot = get_post_meta( $pid, SOE_EVENT_SNAPSHOT_META, true );
@@ -499,7 +499,7 @@ function soe_render_mitglied_events_meta_box( $post ) {
 		$title = isset( $e['title'] ) ? $e['title'] : '';
 		$sport = isset( $e['sport'] ) ? $e['sport'] : '';
 		$role = isset( $e['role'] ) ? $e['role'] : '';
-		$duration = isset( $e['duration'] ) ? $e['duration'] : '';
+		$duration = soe_get_duration_label( isset( $e['duration'] ) ? $e['duration'] : '' );
 		$link = isset( $e['link'] ) ? $e['link'] : '';
 		$link_cell = $link ? '<a href="' . esc_url( $link ) . '">Bearbeiten</a>' : '';
 		echo '<tr><td>' . esc_html( $date_display ) . '</td><td>' . esc_html( $title ) . '</td><td>' . esc_html( $sport ) . '</td><td>' . esc_html( $role ) . '</td><td>' . esc_html( $duration ) . '</td><td>' . $link_cell . '</td></tr>';

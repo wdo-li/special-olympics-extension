@@ -24,47 +24,7 @@ define( 'SOE_MAIL_CAT_EVENT_CREATED', 'event_created' );
 define( 'SOE_MAIL_CAT_USER_WELCOME', 'user_welcome' );
 define( 'SOE_MAIL_CAT_HELP', 'help' );
 
-/** Default duration options (labels for dropdowns). */
-define( 'SOE_DURATION_DEFAULTS', array( '60', '90', '120', '180', '240', 'HL Pauschale', 'Skitraining' ) );
-
-/** Keys for hourly rates matrix: role_stufe_duration => label. Used for payroll. */
-define( 'SOE_HOURLY_RATE_KEYS', array(
-	'hauptleiter_in_1a_60'       => 'Hauptleiter*in 1A – 60 Min',
-	'hauptleiter_in_1a_90'       => 'Hauptleiter*in 1A – 90 Min',
-	'hauptleiter_in_1a_more_2'   => 'Hauptleiter*in 1A – mehr als 2 Std',
-	'hauptleiter_in_1a_more_4'   => 'Hauptleiter*in 1A – mehr als 4 Std',
-	'hauptleiter_in_1a_hl'       => 'Hauptleiter*in 1A – HL Pauschale',
-	'hauptleiter_in_1b_60'       => 'Hauptleiter*in 1B – 60 Min',
-	'hauptleiter_in_1b_90'       => 'Hauptleiter*in 1B – 90 Min',
-	'hauptleiter_in_1b_more_2'   => 'Hauptleiter*in 1B – mehr als 2 Std',
-	'hauptleiter_in_1b_more_4'   => 'Hauptleiter*in 1B – mehr als 4 Std',
-	'hauptleiter_in_1b_hl'       => 'Hauptleiter*in 1B – HL Pauschale',
-	'leiter_in_2a_60'            => 'Leiter*in 2A – 60 Min',
-	'leiter_in_2a_90'            => 'Leiter*in 2A – 90 Min',
-	'leiter_in_2a_more_2'       => 'Leiter*in 2A – mehr als 2 Std',
-	'leiter_in_2a_more_4'       => 'Leiter*in 2A – mehr als 4 Std',
-	'leiter_in_2a_ski'          => 'Leiter*in 2A – Skitraining',
-	'assistenztrainer_in_2b_60' => 'Assistenztrainer*in 2B – 60 Min',
-	'assistenztrainer_in_2b_90' => 'Assistenztrainer*in 2B – 90 Min',
-	'assistenztrainer_in_2b_more_2' => 'Assistenztrainer*in 2B – mehr als 2 Std',
-	'assistenztrainer_in_2b_more_4' => 'Assistenztrainer*in 2B – mehr als 4 Std',
-	'helfer_in_3a_60'           => 'Helfer*in 3A – 60 Min',
-	'helfer_in_3a_90'           => 'Helfer*in 3A – 90 Min',
-	'helfer_in_3a_more_2'       => 'Helfer*in 3A – mehr als 2 Std',
-	'helfer_in_3a_more_4'       => 'Helfer*in 3A – mehr als 4 Std',
-	'praktikant_in_3b_60'       => 'Praktikant*in 3B – 60 Min',
-	'praktikant_in_3b_90'       => 'Praktikant*in 3B – 90 Min',
-	'praktikant_in_3b_more_2'   => 'Praktikant*in 3B – mehr als 2 Std',
-	'praktikant_in_3b_more_4'   => 'Praktikant*in 3B – mehr als 4 Std',
-	'schueler_in_3b_60'         => 'Schüler*in 3B – 60 Min',
-	'schueler_in_3b_90'         => 'Schüler*in 3B – 90 Min',
-	'schueler_in_3b_more_2'     => 'Schüler*in 3B – mehr als 2 Std',
-	'schueler_in_3b_more_4'     => 'Schüler*in 3B – mehr als 4 Std',
-	'athlet_leader_3c_60'       => 'Athlete Leader 3C – 60 Min',
-	'athlet_leader_3c_90'       => 'Athlete Leader 3C – 90 Min',
-	'athlet_leader_3c_more_2'   => 'Athlete Leader 3C – mehr als 2 Std',
-	'athlet_leader_3c_more_4'   => 'Athlete Leader 3C – mehr als 4 Std',
-) );
+require_once __DIR__ . '/duration-payroll-settings.php';
 
 add_action( 'admin_menu', 'soe_add_settings_page', 20 );
 add_action( 'admin_init', 'soe_register_settings' );
@@ -145,18 +105,22 @@ function soe_sanitize_settings( $input ) {
 	if ( array_key_exists( 'debug_enabled', $input ) ) {
 		$out['debug_enabled'] = ! empty( $input['debug_enabled'] );
 	}
-	if ( isset( $input['duration_options'] ) && is_string( $input['duration_options'] ) ) {
-		$out['duration_options'] = sanitize_textarea_field( $input['duration_options'] );
+	if ( isset( $input['staging_host'] ) ) {
+		if ( function_exists( 'soe_sanitize_staging_host_list' ) ) {
+			$hosts = soe_sanitize_staging_host_list( $input['staging_host'] );
+			$out['staging_host'] = empty( $hosts ) ? '' : implode( ', ', $hosts );
+		} else {
+			$out['staging_host'] = sanitize_text_field( $input['staging_host'] );
+		}
+	}
+	if ( isset( $input['duration_tiers'] ) && is_array( $input['duration_tiers'] ) ) {
+		$out['duration_tiers'] = soe_sanitize_duration_tiers_input( $input['duration_tiers'] );
+		unset( $out['duration_options'], $out['hourly_rate_definitions'] );
 	}
 	if ( isset( $input['hourly_rates'] ) && is_array( $input['hourly_rates'] ) ) {
-		$hr = isset( $out['hourly_rates'] ) && is_array( $out['hourly_rates'] ) ? $out['hourly_rates'] : array();
-		foreach ( array_keys( SOE_HOURLY_RATE_KEYS ) as $key ) {
-			if ( isset( $input['hourly_rates'][ $key ] ) && is_string( $input['hourly_rates'][ $key ] ) ) {
-				$val = trim( $input['hourly_rates'][ $key ] );
-				$hr[ $key ] = $val === '' ? '' : sanitize_text_field( $val );
-			}
-		}
-		$out['hourly_rates'] = $hr;
+		$tiers   = isset( $out['duration_tiers'] ) && is_array( $out['duration_tiers'] ) ? $out['duration_tiers'] : soe_get_duration_tiers();
+		$prev_hr = isset( $out['hourly_rates'] ) && is_array( $out['hourly_rates'] ) ? $out['hourly_rates'] : array();
+		$out['hourly_rates'] = soe_sanitize_hourly_rates_input( $input['hourly_rates'], $tiers, $prev_hr );
 	}
 	if ( isset( $input['bh_numbers'] ) && is_array( $input['bh_numbers'] ) ) {
 		$bh = array();
@@ -239,9 +203,10 @@ function soe_sanitize_settings( $input ) {
  */
 function soe_get_default_settings() {
 	return array(
-		'debug_enabled'           => false,
-		'duration_options'        => implode( "\n", SOE_DURATION_DEFAULTS ),
-		'hourly_rates'            => array(),
+		'debug_enabled'              => false,
+		'staging_host'               => 'staging.specialolympics.li',
+		'duration_tiers'             => soe_get_default_duration_tiers(),
+		'hourly_rates'               => array(),
 		'bh_numbers'             => array(),
 		'mail_payroll_subject'   => '',
 		'mail_payroll_body'      => '',
@@ -452,7 +417,10 @@ function soe_render_settings_page() {
 	}
 	$defaults = soe_get_default_settings();
 	$debug_enabled = ! empty( $options['debug_enabled'] );
-	$duration_options = isset( $options['duration_options'] ) ? $options['duration_options'] : $defaults['duration_options'];
+	$staging_host  = isset( $options['staging_host'] ) ? (string) $options['staging_host'] : $defaults['staging_host'];
+	$duration_tiers = isset( $options['duration_tiers'] ) && is_array( $options['duration_tiers'] ) && ! empty( $options['duration_tiers'] )
+		? soe_sanitize_duration_tiers_input( $options['duration_tiers'] )
+		: soe_get_default_duration_tiers();
 	$hourly_rates = isset( $options['hourly_rates'] ) && is_array( $options['hourly_rates'] ) ? $options['hourly_rates'] : array();
 	$bh_numbers = isset( $options['bh_numbers'] ) && is_array( $options['bh_numbers'] ) ? $options['bh_numbers'] : array();
 	$mail_subject = isset( $options['mail_payroll_subject'] ) ? $options['mail_payroll_subject'] : '';
@@ -516,7 +484,7 @@ function soe_render_settings_page() {
 							<h3 class="soe-settings-tab-heading"><?php esc_html_e( 'Allgemein', 'special-olympics-extension' ); ?></h3>
 							<div class="soe-settings-jump-buttons">
 								<a class="button button-small soe-jump-btn" href="#soe-card-general-debug"><?php esc_html_e( 'Debug', 'special-olympics-extension' ); ?></a>
-								<a class="button button-small soe-jump-btn" href="#soe-card-general-duration"><?php esc_html_e( 'Dauer', 'special-olympics-extension' ); ?></a>
+								<a class="button button-small soe-jump-btn" href="#soe-card-general-staging"><?php esc_html_e( 'Staging', 'special-olympics-extension' ); ?></a>
 								<a class="button button-small soe-jump-btn" href="#soe-card-general-login"><?php esc_html_e( 'Login', 'special-olympics-extension' ); ?></a>
 								<a class="button button-small soe-jump-btn" href="#soe-card-general-encryption"><?php esc_html_e( 'Verschlüsselung', 'special-olympics-extension' ); ?></a>
 							</div>
@@ -532,11 +500,13 @@ function soe_render_settings_page() {
 							<p class="description"><?php esc_html_e( 'Wenn aktiv, werden erweiterte Logs (z.B. Sync, Event-Snapshot, Lohnabrechnung Daten-Sammlung) geschrieben. Erfordert in wp-config.php: WP_DEBUG und WP_DEBUG_LOG auf true. Log-Datei: wp-content/debug.log', 'special-olympics-extension' ); ?></p>
 						</td>
 					</tr>
-					<tr id="soe-card-general-duration">
-						<th scope="row"><label for="soe_duration_options"><?php esc_html_e( 'Dauer-Optionen', 'special-olympics-extension' ); ?></label></th>
+					<tr id="soe-card-general-staging">
+						<th scope="row"><label for="soe_staging_host"><?php esc_html_e( 'Staging-Host(s)', 'special-olympics-extension' ); ?></label></th>
 						<td>
-							<textarea name="<?php echo esc_attr( SOE_SETTINGS_OPTION ); ?>[duration_options]" id="soe_duration_options" rows="6" class="large-text"><?php echo esc_textarea( $duration_options ); ?></textarea>
-							<p class="description"><?php esc_html_e( 'Eine Option pro Zeile (z.B. 60, 90, mehr als 2 Stunden). Wird für Training und Event als Dropdown/Radio angeboten.', 'special-olympics-extension' ); ?></p>
+							<input type="text" name="<?php echo esc_attr( SOE_SETTINGS_OPTION ); ?>[staging_host]" id="soe_staging_host" value="<?php echo esc_attr( $staging_host ); ?>" class="regular-text" placeholder="staging.specialolympics.li, localhost, localhost:8080" />
+							<p class="description">
+								<?php esc_html_e( 'Hostnamen der Testumgebungen, durch Komma getrennt (z. B. staging.specialolympics.li, localhost, localhost:8080 oder vollständige URLs). Wenn die aktuelle URL zu einem dieser Hosts passt, werden Favicon, Banner und Admin-Hinweis „Testumgebung“ angezeigt. Leer lassen = deaktiviert.', 'special-olympics-extension' ); ?>
+							</p>
 						</td>
 					</tr>
 					<tr id="soe-card-general-login">
@@ -586,11 +556,12 @@ function soe_render_settings_page() {
 						<td colspan="2">
 							<h3 class="soe-settings-tab-heading"><?php esc_html_e( 'Lohnabrechnung', 'special-olympics-extension' ); ?></h3>
 							<div class="soe-settings-jump-buttons">
+								<a class="button button-small soe-jump-btn" href="#soe-card-payroll-duration"><?php esc_html_e( 'Dauer & Stundensätze', 'special-olympics-extension' ); ?></a>
 								<a class="button button-small soe-jump-btn" href="#soe-card-payroll-bh"><?php esc_html_e( 'BH-Nummern', 'special-olympics-extension' ); ?></a>
-								<a class="button button-small soe-jump-btn" href="#soe-card-payroll-hourly"><?php esc_html_e( 'Stundensätze', 'special-olympics-extension' ); ?></a>
 							</div>
 						</td>
 					</tr>
+					<?php soe_render_duration_payroll_settings_section( $duration_tiers, $hourly_rates ); ?>
 					<tr id="soe-card-payroll-bh">
 						<th scope="row"><?php esc_html_e( 'Buchhaltungsnummern (Sportart → BH-Nr.)', 'special-olympics-extension' ); ?></th>
 						<td>
@@ -610,23 +581,6 @@ function soe_render_settings_page() {
 									</tbody>
 								</table>
 							<?php endif; ?>
-						</td>
-					</tr>
-					<tr id="soe-card-payroll-hourly">
-						<th scope="row"><?php esc_html_e( 'Stundensätze (CHF)', 'special-olympics-extension' ); ?></th>
-						<td>
-							<p class="description"><?php esc_html_e( 'Betrag pro Rolle/Stufe/Dauer für die Lohnabrechnung. Leer = nicht verwendet.', 'special-olympics-extension' ); ?></p>
-							<table class="widefat striped" style="max-width: 480px; margin-top: 8px;">
-								<thead><tr><th><?php esc_html_e( 'Bezeichnung', 'special-olympics-extension' ); ?></th><th>CHF</th></tr></thead>
-								<tbody>
-								<?php foreach ( SOE_HOURLY_RATE_KEYS as $key => $label ) : ?>
-									<tr>
-										<td><label for="soe_hr_<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></label></td>
-										<td><input type="text" name="<?php echo esc_attr( SOE_SETTINGS_OPTION ); ?>[hourly_rates][<?php echo esc_attr( $key ); ?>]" id="soe_hr_<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( isset( $hourly_rates[ $key ] ) ? $hourly_rates[ $key ] : '' ); ?>" class="small-text" /></td>
-									</tr>
-								<?php endforeach; ?>
-								</tbody>
-							</table>
 						</td>
 					</tr>
 				<?php elseif ( $active_tab === 'notifications' ) : ?>
@@ -870,33 +824,15 @@ function soe_render_settings_page() {
 }
 
 /**
- * Returns duration options as an array of strings (for use in training/event).
+ * Returns hourly rate (CHF) for a given payroll rate key, or empty string.
  *
- * @return array
- */
-function soe_get_duration_options() {
-	$raw = soe_get_setting( 'duration_options' );
-	if ( empty( $raw ) ) {
-		return SOE_DURATION_DEFAULTS;
-	}
-	$lines = preg_split( '/\r\n|\r|\n/', $raw, -1, PREG_SPLIT_NO_EMPTY );
-	$out = array();
-	foreach ( $lines as $line ) {
-		$line = trim( $line );
-		if ( $line !== '' ) {
-			$out[] = $line;
-		}
-	}
-	return $out ? $out : SOE_DURATION_DEFAULTS;
-}
-
-/**
- * Returns hourly rate (CHF) for a given role_stufe_duration key, or empty string.
- *
- * @param string $key Key from SOE_HOURLY_RATE_KEYS (e.g. hauptleiter_in_1a_60).
+ * @param string $key Payroll rate key (e.g. hauptleiter_in_1a_d_60min).
  * @return string
  */
 function soe_get_hourly_rate( $key ) {
+	if ( ! is_string( $key ) || $key === '' ) {
+		return '';
+	}
 	$rates = soe_get_setting( 'hourly_rates' );
 	if ( ! is_array( $rates ) || ! array_key_exists( $key, $rates ) ) {
 		return '';

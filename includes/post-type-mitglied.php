@@ -948,8 +948,17 @@ function soe_role_field_normalize_loaded_value( $value, $post_id, $field ) {
  * Prevents fatal errors when legacy/broken data stores booleans (e.g. true).
  */
 function soe_normalize_acf_checkbox_value( $value ) {
-	if ( is_array( $value ) ) {
+	if ( is_string( $value ) && substr( $value, 0, 6 ) === 'ENCv1:' ) {
 		return $value;
+	}
+	if ( is_array( $value ) ) {
+		$clean = array();
+		foreach ( $value as $item ) {
+			if ( is_string( $item ) && $item !== '' && substr( $item, 0, 6 ) !== 'ENCv1:' ) {
+				$clean[] = $item;
+			}
+		}
+		return $clean;
 	}
 	if ( is_string( $value ) && $value !== '' ) {
 		return array( $value );
